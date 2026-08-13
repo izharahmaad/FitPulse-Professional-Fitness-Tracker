@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "FitPulse",
+    "slug": "fitpulse",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "fitpulse",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMotionUsageDescription": "FitPulse uses motion activity to count your steps and calculate walking activity."
+      }
+    },
+    "android": {
+      "package": "com.fitpulse.app",
+      "permissions": [
+        "ACTIVITY_RECOGNITION"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "fitness-reminders"
+        }
+      ],
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
