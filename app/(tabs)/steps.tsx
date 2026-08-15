@@ -22,7 +22,12 @@ import { MiniChart } from "@/components/MiniChart";
 import { useFitness } from "@/hooks/useFitness";
 import { usePedometer } from "@/hooks/usePedometer";
 import { lastNDays } from "@/utils/date";
-import { formatKm, formatNumber } from "@/utils/format";
+import {
+  formatKm,
+  formatNumber,
+} from "@/utils/format";
+
+const ACCENT = "#B7FF1A";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -39,21 +44,27 @@ export default function StepsScreen() {
 
   const [message, setMessage] = useState("");
 
-  // ---------------------------------------------------------
-  // REAL 7-DAY STEP DATA
-  // ---------------------------------------------------------
+  /* =========================================================
+     REAL 7-DAY STEP DATA
+  ========================================================= */
 
-  const days = useMemo(() => lastNDays(7), []);
+  const days = useMemo(
+    () => lastNDays(7),
+    []
+  );
 
   const values = useMemo(
     () =>
-      days.map((day) => state.steps[day]?.steps ?? 0),
+      days.map(
+        (day) =>
+          state.steps[day]?.steps ?? 0
+      ),
     [days, state.steps]
   );
 
-  // ---------------------------------------------------------
-  // REAL STEP CALCULATIONS
-  // ---------------------------------------------------------
+  /* =========================================================
+     REAL STEP CALCULATIONS
+  ========================================================= */
 
   const stepGoal = Math.max(
     1,
@@ -78,7 +89,8 @@ export default function StepsScreen() {
   );
 
   const weeklyAverage = Math.round(
-    weeklyTotal / Math.max(1, values.length)
+    weeklyTotal /
+      Math.max(1, values.length)
   );
 
   const bestDay = Math.max(
@@ -93,17 +105,17 @@ export default function StepsScreen() {
     status.available &&
     status.permissionGranted;
 
-  // ---------------------------------------------------------
-  // RECONCILE REAL IOS HISTORY
-  // ---------------------------------------------------------
+  /* =========================================================
+     REAL SENSOR RECONCILIATION
+  ========================================================= */
 
   useEffect(() => {
     void reconcileIosHistory();
   }, [reconcileIosHistory]);
 
-  // ---------------------------------------------------------
-  // REAL PERMISSION ACTION
-  // ---------------------------------------------------------
+  /* =========================================================
+     REAL PERMISSION ACTION
+  ========================================================= */
 
   const request = async () => {
     const granted =
@@ -116,14 +128,15 @@ export default function StepsScreen() {
     );
   };
 
-  // ---------------------------------------------------------
-  // SMART REAL-TIME INSIGHT
-  // ---------------------------------------------------------
+  /* =========================================================
+     SMART REAL-TIME INSIGHT
+  ========================================================= */
 
   const insight = useMemo(() => {
     if (goalReached) {
       return {
-        icon: "checkmark-circle" as IconName,
+        icon:
+          "checkmark-circle" as IconName,
         title: "Goal completed",
         text:
           "Excellent work. You reached your step goal today.",
@@ -132,7 +145,8 @@ export default function StepsScreen() {
 
     if (completion >= 75) {
       return {
-        icon: "trending-up" as IconName,
+        icon:
+          "trending-up" as IconName,
         title: "Almost there",
         text: `${formatNumber(
           remainingSteps
@@ -142,7 +156,8 @@ export default function StepsScreen() {
 
     if (completion >= 40) {
       return {
-        icon: "walk" as IconName,
+        icon:
+          "walk" as IconName,
         title: "Good progress",
         text:
           "You're building momentum. A short walk can move you closer to your goal.",
@@ -150,7 +165,8 @@ export default function StepsScreen() {
     }
 
     return {
-      icon: "footsteps" as IconName,
+      icon:
+        "footsteps" as IconName,
       title: "Let's get moving",
       text:
         "Start with a short walk and build your activity throughout the day.",
@@ -167,36 +183,47 @@ export default function StepsScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* ================================================= */}
-        {/* HEADER */}
-        {/* ================================================= */}
+        {/* ===================================================
+            HEADER
+        =================================================== */}
 
         <View style={styles.header}>
           <View style={styles.headerText}>
             <Subtitle>Daily activity</Subtitle>
+
             <Title>Steps</Title>
+
+            <Text
+              style={[
+                styles.headerDescription,
+                { color: c.muted },
+              ]}
+            >
+              Track your walking activity and daily
+              movement progress.
+            </Text>
           </View>
 
           <View
             style={[
               styles.headerIcon,
               {
-                backgroundColor: c.primarySoft,
-                borderColor: `${c.primary}35`,
+                backgroundColor: `${ACCENT}14`,
+                borderColor: `${ACCENT}28`,
               },
             ]}
           >
             <Ionicons
               name="footsteps"
               size={21}
-              color={c.primary}
+              color={ACCENT}
             />
           </View>
         </View>
 
-        {/* ================================================= */}
-        {/* MAIN STEP HERO */}
-        {/* ================================================= */}
+        {/* ===================================================
+            MAIN HERO
+        =================================================== */}
 
         <Card
           style={[
@@ -208,39 +235,38 @@ export default function StepsScreen() {
           ]}
         >
           <View style={styles.heroHeader}>
-            <View style={styles.heroInfo}>
+            <View style={styles.heroCopy}>
               <Text
                 style={[
-                  styles.overline,
+                  styles.eyebrow,
                   { color: c.muted },
                 ]}
               >
-                TODAY'S ACTIVITY
+                TODAY'S STEPS
               </Text>
 
               <Text
                 style={[
-                  styles.stepNumber,
+                  styles.heroNumber,
                   { color: c.text },
                 ]}
               >
                 {formatNumber(today.steps)}
               </Text>
 
-              <View style={styles.goalStatus}>
+              <View style={styles.goalLine}>
                 <View
                   style={[
-                    styles.statusDot,
+                    styles.goalDot,
                     {
-                      backgroundColor:
-                        c.primary,
+                      backgroundColor: ACCENT,
                     },
                   ]}
                 />
 
                 <Text
                   style={[
-                    styles.goalStatusText,
+                    styles.goalLineText,
                     { color: c.muted },
                   ]}
                 >
@@ -248,24 +274,21 @@ export default function StepsScreen() {
                     ? "Daily goal completed"
                     : `${formatNumber(
                         stepGoal
-                      )} step goal`}
+                      )} step daily goal`}
                 </Text>
               </View>
             </View>
 
-            {/* Progress ring */}
-            <View style={styles.ringContainer}>
+            <View style={styles.heroRing}>
               <ProgressRing
                 value={today.steps}
                 max={stepGoal}
-                size={142}
+                size={148}
                 label={`${completion}%`}
                 sublabel="complete"
               />
             </View>
           </View>
-
-          {/* Progress bar */}
 
           <View
             style={[
@@ -280,8 +303,8 @@ export default function StepsScreen() {
               style={[
                 styles.progressFill,
                 {
+                  backgroundColor: ACCENT,
                   width: `${completion}%`,
-                  backgroundColor: c.primary,
                 },
               ]}
             />
@@ -290,8 +313,8 @@ export default function StepsScreen() {
           <View style={styles.progressFooter}>
             <Text
               style={[
-                styles.progressPercent,
-                { color: c.primary },
+                styles.progressLeft,
+                { color: ACCENT },
               ]}
             >
               {completion}% complete
@@ -299,7 +322,7 @@ export default function StepsScreen() {
 
             <Text
               style={[
-                styles.remainingText,
+                styles.progressRight,
                 { color: c.muted },
               ]}
             >
@@ -310,15 +333,51 @@ export default function StepsScreen() {
                   )} remaining`}
             </Text>
           </View>
+
+          <View
+            style={[
+              styles.heroSummary,
+              {
+                borderTopColor: c.border,
+              },
+            ]}
+          >
+            <SummaryStat
+              icon="navigate-outline"
+              label="Distance"
+              value={formatKm(
+                today.distanceKm
+              )}
+              c={c}
+            />
+
+            <View
+              style={[
+                styles.summaryDivider,
+                {
+                  backgroundColor:
+                    c.border,
+                },
+              ]}
+            />
+
+            <SummaryStat
+              icon="flame-outline"
+              label="Burned"
+              value={`${today.caloriesBurned} kcal`}
+              c={c}
+            />
+          </View>
         </Card>
 
-        {/* ================================================= */}
-        {/* TODAY'S ACTIVITY */}
-        {/* ================================================= */}
+        {/* ===================================================
+            TODAY'S ACTIVITY
+        =================================================== */}
 
-        <SectionTitle
+        <SectionHeader
           title="Today's activity"
-          subtitle="Your live movement summary"
+          subtitle="Live movement summary"
+          icon="pulse-outline"
         />
 
         <View style={styles.statsGrid}>
@@ -333,8 +392,9 @@ export default function StepsScreen() {
 
           <StatCard
             icon="flame-outline"
-            title="Calories"
-            value={`${today.caloriesBurned} kcal`}
+            title="Calories burned"
+            value={`${today.caloriesBurned}`}
+            suffix="kcal"
             c={c}
           />
 
@@ -355,35 +415,91 @@ export default function StepsScreen() {
           />
         </View>
 
-        {/* ================================================= */}
-        {/* SMART INSIGHT */}
-        {/* ================================================= */}
+        {/* ===================================================
+            FITPULSE INSIGHT — PILL
+        =================================================== */}
 
-        <Card
-          style={[
+        <Pressable
+          style={({ pressed }) => [
             styles.insightCard,
             {
-              backgroundColor: c.primarySoft,
-              borderColor: `${c.primary}45`,
+              backgroundColor: c.surface,
+              borderColor: `${ACCENT}38`,
+              opacity: pressed ? 0.82 : 1,
+              transform: [
+                {
+                  scale: pressed
+                    ? 0.985
+                    : 1,
+                },
+              ],
             },
           ]}
         >
           <View
             style={[
-              styles.circularIcon,
+              styles.insightIcon,
               {
-                backgroundColor: c.primary,
+                backgroundColor: ACCENT,
               },
             ]}
           >
             <Ionicons
               name={insight.icon}
-              size={20}
-              color={c.white}
+              size={18}
+              color="#0A0F0C"
             />
           </View>
 
-          <View style={styles.insightContent}>
+          <View
+            style={styles.insightContent}
+          >
+            <View
+              style={
+                styles.insightTopRow
+              }
+            >
+              <Text
+                style={[
+                  styles.insightEyebrow,
+                  { color: ACCENT },
+                ]}
+              >
+                FITPULSE INSIGHT
+              </Text>
+
+              <View
+                style={[
+                  styles.insightBadge,
+                  {
+                    backgroundColor:
+                      `${ACCENT}12`,
+                    borderColor:
+                      `${ACCENT}25`,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.insightBadgeDot,
+                    {
+                      backgroundColor:
+                        ACCENT,
+                    },
+                  ]}
+                />
+
+                <Text
+                  style={[
+                    styles.insightBadgeText,
+                    { color: ACCENT },
+                  ]}
+                >
+                  LIVE
+                </Text>
+              </View>
+            </View>
+
             <Text
               style={[
                 styles.insightTitle,
@@ -402,23 +518,85 @@ export default function StepsScreen() {
               {insight.text}
             </Text>
           </View>
-        </Card>
+        </Pressable>
 
-        {/* ================================================= */}
-        {/* WEEKLY OVERVIEW */}
-        {/* ================================================= */}
+        {/* ===================================================
+            WEEKLY TREND
+        =================================================== */}
 
-        <SectionTitle
-          title="Weekly activity"
+        <SectionHeader
+          title="Weekly trend"
           subtitle="Your last 7 days"
           icon="bar-chart-outline"
         />
 
-        <Card style={styles.chartCard}>
-          <MiniChart
-            values={values}
-            labels={days}
-          />
+        <Card
+          style={[
+            styles.chartCard,
+            {
+              backgroundColor: c.surface,
+              borderColor: c.border,
+            },
+          ]}
+        >
+          <View style={styles.chartHeader}>
+            <View>
+              <Text
+                style={[
+                  styles.chartTitle,
+                  { color: c.text },
+                ]}
+              >
+                Daily steps
+              </Text>
+
+              <Text
+                style={[
+                  styles.chartSubtitle,
+                  { color: c.muted },
+                ]}
+              >
+                Real recorded step activity
+              </Text>
+            </View>
+
+            <View
+              style={[
+                styles.chartBadge,
+                {
+                  backgroundColor:
+                    `${ACCENT}12`,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.chartDot,
+                  {
+                    backgroundColor:
+                      ACCENT,
+                  },
+                ]}
+              />
+
+              <Text
+                style={[
+                  styles.chartBadgeText,
+                  { color: ACCENT },
+                ]}
+              >
+                7 DAYS
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.chartArea}>
+            <MiniChart
+              values={values}
+              labels={days}
+              height={155}
+            />
+          </View>
 
           <View
             style={[
@@ -457,148 +635,219 @@ export default function StepsScreen() {
           </View>
         </Card>
 
-        {/* ================================================= */}
-        {/* SENSOR CONNECTION */}
-        {/* ================================================= */}
+        {/* ===================================================
+            STEP TRACKING — FULL PILL
+        =================================================== */}
 
-        <SectionTitle
+        <SectionHeader
           title="Step tracking"
           subtitle="Device sensor connection"
+          icon="hardware-chip-outline"
         />
 
-        <Card style={styles.sensorCard}>
-          <View style={styles.sensorHeader}>
-            <View
-              style={[
-                styles.circularIcon,
-                {
-                  backgroundColor:
-                    sensorReady
-                      ? c.primarySoft
-                      : c.surfaceAlt,
-                },
-              ]}
-            >
-              <Ionicons
-                name={
+        <View
+          style={[
+            styles.sensorPill,
+            {
+              backgroundColor: c.surface,
+              borderColor: c.border,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.sensorCircle,
+              {
+                backgroundColor:
                   sensorReady
-                    ? "checkmark"
-                    : "hardware-chip-outline"
-                }
-                size={20}
-                color={
+                    ? `${ACCENT}14`
+                    : c.surfaceAlt,
+                borderColor:
                   sensorReady
-                    ? c.primary
-                    : c.muted
-                }
-              />
-            </View>
+                    ? `${ACCENT}30`
+                    : c.border,
+              },
+            ]}
+          >
+            <Ionicons
+              name={
+                sensorReady
+                  ? "pulse"
+                  : "hardware-chip-outline"
+              }
+              size={18}
+              color={
+                sensorReady
+                  ? ACCENT
+                  : c.muted
+              }
+            />
+          </View>
 
-            <View style={styles.sensorInfo}>
+          <View
+            style={styles.sensorInfo}
+          >
+            <View
+              style={
+                styles.sensorTitleRow
+              }
+            >
               <Text
                 style={[
                   styles.sensorTitle,
                   { color: c.text },
                 ]}
+                numberOfLines={1}
               >
                 {sensorReady
                   ? "Step sensor connected"
                   : "Step sensor needs access"}
               </Text>
 
-              <Text
-                style={[
-                  styles.sensorStatus,
-                  {
-                    color: sensorReady
-                      ? c.primary
-                      : c.muted,
-                  },
-                ]}
-              >
-                {status.message}
-              </Text>
-            </View>
-
-            <View
-              style={[
-                styles.connectionDot,
-                {
-                  backgroundColor:
-                    sensorReady
-                      ? c.primary
-                      : c.danger,
-                },
-              ]}
-            />
-          </View>
-
-          {!status.permissionGranted && (
-            <View style={styles.permissionArea}>
-              <Button
-                title="Allow step tracking"
-                onPress={request}
-              />
-            </View>
-          )}
-
-          {message ? (
-            <View
-              style={[
-                styles.messageBox,
-                {
-                  backgroundColor:
-                    c.surfaceAlt,
-                },
-              ]}
-            >
               <View
                 style={[
-                  styles.messageIcon,
+                  styles.sensorStatusPill,
                   {
                     backgroundColor:
-                      c.primarySoft,
+                      sensorReady
+                        ? `${ACCENT}12`
+                        : `${c.danger}12`,
+                    borderColor:
+                      sensorReady
+                        ? `${ACCENT}28`
+                        : `${c.danger}30`,
                   },
                 ]}
               >
-                <Ionicons
-                  name="information"
-                  size={15}
-                  color={c.primary}
+                <View
+                  style={[
+                    styles.sensorStatusDot,
+                    {
+                      backgroundColor:
+                        sensorReady
+                          ? ACCENT
+                          : c.danger,
+                    },
+                  ]}
                 />
+
+                <Text
+                  style={[
+                    styles.sensorStatusText,
+                    {
+                      color:
+                        sensorReady
+                          ? ACCENT
+                          : c.danger,
+                    },
+                  ]}
+                >
+                  {sensorReady
+                    ? "READY"
+                    : "OFF"}
+                </Text>
               </View>
-
-              <Text
-                style={[
-                  styles.messageText,
-                  { color: c.muted },
-                ]}
-              >
-                {message}
-              </Text>
             </View>
-          ) : null}
-        </Card>
 
-        {/* ================================================= */}
-        {/* ACCURACY */}
-        {/* ================================================= */}
+            <Text
+              style={[
+                styles.sensorStatusMessage,
+                { color: c.muted },
+              ]}
+              numberOfLines={2}
+            >
+              {status.message}
+            </Text>
+          </View>
+        </View>
 
-        <Card style={styles.accuracyCard}>
-          <View style={styles.accuracyHeader}>
+        {!status.permissionGranted && (
+          <View
+            style={styles.permissionArea}
+          >
+            <Button
+              title="Allow step tracking"
+              onPress={request}
+            />
+          </View>
+        )}
+
+        {message ? (
+          <View
+            style={[
+              styles.messagePill,
+              {
+                backgroundColor:
+                  c.surfaceAlt,
+                borderColor:
+                  c.border,
+              },
+            ]}
+          >
             <View
               style={[
-                styles.smallCircle,
+                styles.messageCircle,
                 {
                   backgroundColor:
-                    c.primarySoft,
+                    `${ACCENT}12`,
                 },
               ]}
             >
               <Ionicons
-                name="shield-checkmark"
-                size={17}
-                color={c.primary}
+                name="information-outline"
+                size={15}
+                color={ACCENT}
+              />
+            </View>
+
+            <Text
+              style={[
+                styles.messageText,
+                { color: c.muted },
+              ]}
+            >
+              {message}
+            </Text>
+          </View>
+        ) : null}
+
+        {/* ===================================================
+            TRACKING ACCURACY
+        =================================================== */}
+
+        <SectionHeader
+          title="Tracking accuracy"
+          subtitle="How FitPulse handles your step data"
+          icon="shield-checkmark-outline"
+        />
+
+        <Card
+          style={[
+            styles.accuracyCard,
+            {
+              backgroundColor:
+                `${ACCENT}08`,
+              borderColor:
+                `${ACCENT}25`,
+            },
+          ]}
+        >
+          <View
+            style={styles.accuracyTop}
+          >
+            <View
+              style={[
+                styles.accuracyIcon,
+                {
+                  backgroundColor:
+                    ACCENT,
+                },
+              ]}
+            >
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={18}
+                color="#0A0F0C"
               />
             </View>
 
@@ -608,78 +857,40 @@ export default function StepsScreen() {
                 { color: c.text },
               ]}
             >
-              Tracking accuracy
+              Real sensor data
             </Text>
           </View>
 
           <Text
             style={[
-              styles.body,
+              styles.accuracyText,
               { color: c.muted },
             ]}
           >
-            FitPulse uses your device
-            pedometer for step tracking.
-            Android Expo Pedometer updates
-            may stop while the app is running
-            in the background. FitPulse does
-            not invent background steps.
-            Full background and historical
-            tracking can be added later
-            through a native Health Connect
-            adapter.
+            FitPulse uses your device pedometer
+            for observed step data. Android Expo
+            Pedometer updates may stop while the
+            app is in the background, so FitPulse
+            does not invent background steps.
+            Full background and historical tracking
+            can be added through a native Health
+            Connect adapter.
           </Text>
         </Card>
 
-        {/* ================================================= */}
-        {/* BRAND FOOTER */}
-        {/* ================================================= */}
-
-        <View style={styles.footer}>
-          <View
-            style={[
-              styles.footerCircle,
-              {
-                backgroundColor:
-                  c.primarySoft,
-              },
-            ]}
-          >
-            <Ionicons
-              name="fitness"
-              size={17}
-              color={c.primary}
-            />
-          </View>
-
-          <Text
-            style={[
-              styles.footerTitle,
-              { color: c.text },
-            ]}
-          >
-            FitPulse
-          </Text>
-
-          <Text
-            style={[
-              styles.footerText,
-              { color: c.muted },
-            ]}
-          >
-            Small steps. Better consistency.
-          </Text>
-        </View>
+        <View
+          style={styles.bottomSpace}
+        />
       </ScrollView>
     </Screen>
   );
 }
 
 /* ========================================================= */
-/* SECTION TITLE */
+/* SECTION HEADER                                            */
 /* ========================================================= */
 
-function SectionTitle({
+function SectionHeader({
   title,
   subtitle,
   icon,
@@ -691,8 +902,12 @@ function SectionTitle({
   const c = useAppColors();
 
   return (
-    <View style={styles.sectionHeader}>
-      <View style={styles.sectionText}>
+    <View
+      style={styles.sectionHeader}
+    >
+      <View
+        style={styles.sectionText}
+      >
         <Text
           style={[
             styles.sectionTitle,
@@ -718,14 +933,16 @@ function SectionTitle({
             styles.sectionIcon,
             {
               backgroundColor:
-                c.primarySoft,
+                `${ACCENT}14`,
+              borderColor:
+                `${ACCENT}25`,
             },
           ]}
         >
           <Ionicons
             name={icon}
             size={17}
-            color={c.primary}
+            color={ACCENT}
           />
         </View>
       ) : null}
@@ -734,18 +951,80 @@ function SectionTitle({
 }
 
 /* ========================================================= */
-/* STAT CARD */
+/* SUMMARY STAT                                              */
+/* ========================================================= */
+
+function SummaryStat({
+  icon,
+  label,
+  value,
+  c,
+}: {
+  icon: IconName;
+  label: string;
+  value: string;
+  c: ReturnType<typeof useAppColors>;
+}) {
+  return (
+    <View
+      style={styles.summaryStat}
+    >
+      <View
+        style={[
+          styles.summaryIcon,
+          {
+            backgroundColor:
+              `${ACCENT}12`,
+          },
+        ]}
+      >
+        <Ionicons
+          name={icon}
+          size={14}
+          color={ACCENT}
+        />
+      </View>
+
+      <View
+        style={styles.summaryCopy}
+      >
+        <Text
+          style={[
+            styles.summaryLabel,
+            { color: c.muted },
+          ]}
+        >
+          {label}
+        </Text>
+
+        <Text
+          style={[
+            styles.summaryValue,
+            { color: c.text },
+          ]}
+        >
+          {value}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+/* ========================================================= */
+/* STAT CARD                                                 */
 /* ========================================================= */
 
 function StatCard({
   icon,
   title,
   value,
+  suffix,
   c,
 }: {
   icon: IconName;
   title: string;
   value: string;
+  suffix?: string;
   c: ReturnType<typeof useAppColors>;
 }) {
   return (
@@ -753,8 +1032,10 @@ function StatCard({
       style={[
         styles.statCard,
         {
-          backgroundColor: c.surface,
-          borderColor: c.border,
+          backgroundColor:
+            c.surface,
+          borderColor:
+            c.border,
         },
       ]}
     >
@@ -763,14 +1044,14 @@ function StatCard({
           styles.statIcon,
           {
             backgroundColor:
-              c.primarySoft,
+              `${ACCENT}12`,
           },
         ]}
       >
         <Ionicons
           name={icon}
-          size={18}
-          color={c.primary}
+          size={17}
+          color={ACCENT}
         />
       </View>
 
@@ -783,21 +1064,36 @@ function StatCard({
         {title}
       </Text>
 
-      <Text
-        style={[
-          styles.statValue,
-          { color: c.text },
-        ]}
-        numberOfLines={1}
+      <View
+        style={styles.statValueRow}
       >
-        {value}
-      </Text>
+        <Text
+          style={[
+            styles.statValue,
+            { color: c.text },
+          ]}
+          numberOfLines={1}
+        >
+          {value}
+        </Text>
+
+        {suffix ? (
+          <Text
+            style={[
+              styles.statSuffix,
+              { color: c.muted },
+            ]}
+          >
+            {suffix}
+          </Text>
+        ) : null}
+      </View>
     </Card>
   );
 }
 
 /* ========================================================= */
-/* WEEKLY STAT */
+/* WEEKLY STAT                                               */
 /* ========================================================= */
 
 function WeeklyStat({
@@ -810,7 +1106,9 @@ function WeeklyStat({
   c: ReturnType<typeof useAppColors>;
 }) {
   return (
-    <View style={styles.weeklyStat}>
+    <View
+      style={styles.weeklyStat}
+    >
       <Text
         style={[
           styles.weeklyLabel,
@@ -825,7 +1123,6 @@ function WeeklyStat({
           styles.weeklyValue,
           { color: c.text },
         ]}
-        numberOfLines={1}
       >
         {value}
       </Text>
@@ -834,380 +1131,551 @@ function WeeklyStat({
 }
 
 /* ========================================================= */
-/* STYLES */
+/* STYLES                                                     */
 /* ========================================================= */
 
-const styles = StyleSheet.create({
-  content: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-
-    // Important because your custom floating footer
-    // sits over the bottom area.
-    paddingBottom: 150,
-  },
-
-  /* ---------------- HEADER ---------------- */
-
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-
-  headerText: {
-    flex: 1,
-  },
-
-  headerIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-  },
-
-  /* ---------------- HERO ---------------- */
-
-  hero: {
-    padding: 20,
-    borderRadius: 24,
-    marginBottom: 24,
-  },
-
-  heroHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-
-  heroInfo: {
-    flex: 1,
-    paddingRight: 8,
-  },
-
-  overline: {
-    fontSize: 10,
-    fontWeight: "900",
-    letterSpacing: 1.2,
-    marginBottom: 6,
-  },
-
-  stepNumber: {
-    fontSize: 40,
-    fontWeight: "900",
-    letterSpacing: -1.2,
-  },
-
-  goalStatus: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-  },
-
-  statusDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    marginRight: 7,
-  },
-
-  goalStatusText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-
-  ringContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  progressTrack: {
-    height: 7,
-    borderRadius: 10,
-    overflow: "hidden",
-    marginTop: 22,
-  },
-
-  progressFill: {
-    height: "100%",
-    borderRadius: 10,
-  },
-
-  progressFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 9,
-  },
-
-  progressPercent: {
-    fontSize: 11,
-    fontWeight: "900",
-  },
-
-  remainingText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-
-  /* ---------------- SECTION ---------------- */
-
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 11,
-    marginTop: 2,
-  },
-
-  sectionText: {
-    flex: 1,
-  },
-
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    letterSpacing: -0.2,
-  },
-
-  sectionSubtitle: {
-    fontSize: 11,
-    marginTop: 3,
-  },
-
-  sectionIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  /* ---------------- STATS ---------------- */
-
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    rowGap: 10,
-    marginBottom: 24,
-  },
-
-  statCard: {
-    width: "48.5%",
-    minHeight: 116,
-    marginBottom: 0,
-    borderRadius: 20,
-  },
-
-  statIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 10,
-  },
-
-  statTitle: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-
-  statValue: {
-    fontSize: 18,
-    fontWeight: "900",
-    marginTop: 3,
-  },
-
-  /* ---------------- INSIGHT ---------------- */
-
-  insightCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderRadius: 20,
-    marginBottom: 24,
-    paddingVertical: 15,
-  },
-
-  circularIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-
-  insightContent: {
-    flex: 1,
-  },
-
-  insightTitle: {
-    fontSize: 14,
-    fontWeight: "900",
-    marginBottom: 3,
-  },
-
-  insightText: {
-    fontSize: 11,
-    lineHeight: 17,
-  },
-
-  /* ---------------- CHART ---------------- */
-
-  chartCard: {
-    borderRadius: 20,
-    marginBottom: 24,
-  },
-
-  divider: {
-    height: 1,
-    marginVertical: 18,
-  },
-
-  weeklyStats: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-
-  weeklyStat: {
-    flex: 1,
-  },
-
-  weeklyLabel: {
-    fontSize: 10,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-
-  weeklyValue: {
-    fontSize: 15,
-    fontWeight: "900",
-  },
-
-  /* ---------------- SENSOR ---------------- */
-
-  sensorCard: {
-    borderRadius: 20,
-    marginBottom: 24,
-  },
-
-  sensorHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  sensorInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-
-  sensorTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-  },
-
-  sensorStatus: {
-    fontSize: 11,
-    lineHeight: 17,
-    marginTop: 2,
-  },
-
-  connectionDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    marginLeft: 8,
-  },
-
-  permissionArea: {
-    marginTop: 16,
-  },
-
-  messageBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 14,
-    padding: 10,
-    marginTop: 12,
-  },
-
-  messageIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  messageText: {
-    flex: 1,
-    fontSize: 11,
-    lineHeight: 17,
-    marginLeft: 8,
-  },
-
-  /* ---------------- ACCURACY ---------------- */
-
-  accuracyCard: {
-    borderRadius: 20,
-    marginBottom: 24,
-  },
-
-  accuracyHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 11,
-  },
-
-  smallCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  accuracyTitle: {
-    fontSize: 15,
-    fontWeight: "900",
-    marginLeft: 9,
-  },
-
-  body: {
-    fontSize: 11,
-    lineHeight: 18,
-  },
-
-  /* ---------------- FOOTER ---------------- */
-
-  footer: {
-    alignItems: "center",
-    paddingTop: 6,
-    paddingBottom: 8,
-  },
-
-  footerCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 7,
-  },
-
-  footerTitle: {
-    fontSize: 13,
-    fontWeight: "900",
-  },
-
-  footerText: {
-    fontSize: 10,
-    marginTop: 2,
-  },
-});
+const styles =
+  StyleSheet.create({
+    content: {
+      paddingHorizontal: 16,
+      paddingTop: 14,
+      paddingBottom: 150,
+    },
+
+    /* Header */
+
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent:
+        "space-between",
+      marginBottom: 19,
+    },
+
+    headerText: {
+      flex: 1,
+      paddingRight: 12,
+    },
+
+    headerDescription: {
+      fontSize: 11,
+      lineHeight: 17,
+      marginTop: 4,
+    },
+
+    headerIcon: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      borderWidth: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    /* Hero */
+
+    hero: {
+      borderRadius: 26,
+      borderWidth: 1,
+      padding: 19,
+      marginBottom: 24,
+    },
+
+    heroHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent:
+        "space-between",
+    },
+
+    heroCopy: {
+      flex: 1,
+      paddingRight: 10,
+    },
+
+    eyebrow: {
+      fontSize: 9,
+      fontWeight: "900",
+      letterSpacing: 1.15,
+      marginBottom: 5,
+    },
+
+    heroNumber: {
+      fontSize: 41,
+      fontWeight: "900",
+      letterSpacing: -1.4,
+    },
+
+    goalLine: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 7,
+    },
+
+    goalDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      marginRight: 7,
+    },
+
+    goalLineText: {
+      fontSize: 10,
+      fontWeight: "600",
+    },
+
+    heroRing: {
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    progressTrack: {
+      height: 8,
+      borderRadius: 999,
+      overflow: "hidden",
+      marginTop: 20,
+    },
+
+    progressFill: {
+      height: "100%",
+      borderRadius: 999,
+    },
+
+    progressFooter: {
+      flexDirection: "row",
+      justifyContent:
+        "space-between",
+      alignItems: "center",
+      marginTop: 8,
+    },
+
+    progressLeft: {
+      fontSize: 10,
+      fontWeight: "900",
+    },
+
+    progressRight: {
+      fontSize: 10,
+      fontWeight: "600",
+    },
+
+    heroSummary: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderTopWidth: 1,
+      marginTop: 16,
+      paddingTop: 14,
+    },
+
+    summaryStat: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+    },
+
+    summaryIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    summaryCopy: {
+      flex: 1,
+      marginLeft: 8,
+    },
+
+    summaryLabel: {
+      fontSize: 8,
+      fontWeight: "600",
+    },
+
+    summaryValue: {
+      fontSize: 12,
+      fontWeight: "900",
+      marginTop: 2,
+    },
+
+    summaryDivider: {
+      width: 1,
+      height: 31,
+      marginHorizontal: 9,
+    },
+
+    /* Sections */
+
+    sectionHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent:
+        "space-between",
+      marginBottom: 10,
+    },
+
+    sectionText: {
+      flex: 1,
+    },
+
+    sectionTitle: {
+      fontSize: 17,
+      fontWeight: "900",
+      letterSpacing: -0.2,
+    },
+
+    sectionSubtitle: {
+      fontSize: 10,
+      lineHeight: 15,
+      marginTop: 3,
+    },
+
+    sectionIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      borderWidth: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    /* Stats */
+
+    statsGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent:
+        "space-between",
+      rowGap: 10,
+      marginBottom: 24,
+    },
+
+    statCard: {
+      width: "48.5%",
+      minHeight: 112,
+      borderRadius: 21,
+      marginBottom: 0,
+    },
+
+    statIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 9,
+    },
+
+    statTitle: {
+      fontSize: 10,
+      fontWeight: "600",
+    },
+
+    statValueRow: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      marginTop: 3,
+    },
+
+    statValue: {
+      fontSize: 18,
+      fontWeight: "900",
+    },
+
+    statSuffix: {
+      fontSize: 8,
+      fontWeight: "700",
+      marginLeft: 3,
+    },
+
+    /* FitPulse Insight */
+
+    insightCard: {
+      minHeight: 86,
+      borderRadius: 999,
+      borderWidth: 1,
+      paddingVertical: 11,
+      paddingLeft: 11,
+      paddingRight: 13,
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 24,
+    },
+
+    insightIcon: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+    },
+
+    insightContent: {
+      flex: 1,
+      marginLeft: 11,
+      minWidth: 0,
+    },
+
+    insightTopRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent:
+        "space-between",
+      marginBottom: 3,
+    },
+
+    insightEyebrow: {
+      fontSize: 8,
+      fontWeight: "900",
+      letterSpacing: 1,
+    },
+
+    insightBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderRadius: 999,
+      borderWidth: 1,
+      paddingHorizontal: 7,
+      paddingVertical: 3,
+      marginLeft: 8,
+    },
+
+    insightBadgeDot: {
+      width: 4,
+      height: 4,
+      borderRadius: 2,
+      marginRight: 4,
+    },
+
+    insightBadgeText: {
+      fontSize: 7,
+      fontWeight: "900",
+      letterSpacing: 0.6,
+    },
+
+    insightTitle: {
+      fontSize: 14,
+      fontWeight: "900",
+    },
+
+    insightText: {
+      fontSize: 10,
+      lineHeight: 16,
+      marginTop: 3,
+    },
+
+    /* Chart */
+
+    chartCard: {
+      borderRadius: 22,
+      padding: 16,
+      marginBottom: 24,
+    },
+
+    chartHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent:
+        "space-between",
+      marginBottom: 8,
+    },
+
+    chartTitle: {
+      fontSize: 14,
+      fontWeight: "900",
+    },
+
+    chartSubtitle: {
+      fontSize: 9,
+      marginTop: 3,
+    },
+
+    chartBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderRadius: 999,
+      paddingHorizontal: 8,
+      paddingVertical: 5,
+    },
+
+    chartDot: {
+      width: 5,
+      height: 5,
+      borderRadius: 3,
+      marginRight: 5,
+    },
+
+    chartBadgeText: {
+      fontSize: 7,
+      fontWeight: "900",
+      letterSpacing: 0.7,
+    },
+
+    chartArea: {
+      marginTop: 4,
+    },
+
+    divider: {
+      height: 1,
+      marginVertical: 15,
+    },
+
+    weeklyStats: {
+      flexDirection: "row",
+    },
+
+    weeklyStat: {
+      flex: 1,
+    },
+
+    weeklyLabel: {
+      fontSize: 9,
+      fontWeight: "600",
+    },
+
+    weeklyValue: {
+      fontSize: 15,
+      fontWeight: "900",
+      marginTop: 3,
+    },
+
+    /* Sensor pill */
+
+    sensorPill: {
+      minHeight: 68,
+      borderRadius: 999,
+      borderWidth: 1,
+      paddingHorizontal: 8,
+      paddingVertical: 8,
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 10,
+    },
+
+    sensorCircle: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      borderWidth: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+    },
+
+    sensorInfo: {
+      flex: 1,
+      marginLeft: 10,
+      minWidth: 0,
+    },
+
+    sensorTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent:
+        "space-between",
+    },
+
+    sensorTitle: {
+      flex: 1,
+      fontSize: 12,
+      fontWeight: "900",
+      paddingRight: 7,
+    },
+
+    sensorStatusPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderRadius: 999,
+      borderWidth: 1,
+      paddingHorizontal: 7,
+      paddingVertical: 4,
+    },
+
+    sensorStatusDot: {
+      width: 5,
+      height: 5,
+      borderRadius: 3,
+      marginRight: 4,
+    },
+
+    sensorStatusText: {
+      fontSize: 7,
+      fontWeight: "900",
+      letterSpacing: 0.6,
+    },
+
+    sensorStatusMessage: {
+      fontSize: 9,
+      lineHeight: 14,
+      marginTop: 3,
+    },
+
+    permissionArea: {
+      marginTop: 7,
+      marginBottom: 10,
+    },
+
+    messagePill: {
+      minHeight: 48,
+      borderRadius: 999,
+      borderWidth: 1,
+      paddingHorizontal: 8,
+      paddingVertical: 7,
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 24,
+    },
+
+    messageCircle: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    messageText: {
+      flex: 1,
+      fontSize: 9,
+      lineHeight: 15,
+      marginLeft: 8,
+    },
+
+    /* Accuracy */
+
+    accuracyCard: {
+      borderRadius: 22,
+      padding: 16,
+      marginBottom: 15,
+      borderWidth: 1,
+    },
+
+    accuracyTop: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 10,
+    },
+
+    accuracyIcon: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    accuracyTitle: {
+      fontSize: 14,
+      fontWeight: "900",
+      marginLeft: 9,
+    },
+
+    accuracyText: {
+      fontSize: 10,
+      lineHeight: 17,
+    },
+
+    bottomSpace: {
+      height: 20,
+    },
+  });

@@ -1,15 +1,21 @@
-import React, { useState } from "react";
+import React, {
+  useCallback,
+  useState,
+} from "react";
 import {
+  Alert,
+  Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 
 import {
-  Button,
   Card,
   Input,
   Label,
@@ -20,6 +26,17 @@ import {
 } from "@/components/ui";
 
 import { useFitness } from "@/hooks/useFitness";
+
+import {
+  getProfileImage,
+  saveProfileImage,
+  removeProfileImage,
+} from "@/services/profileImage";
+
+const ACCENT = "#B7FF1A";
+
+type IconName =
+  keyof typeof Ionicons.glyphMap;
 
 export default function ProfileScreen() {
   const c = useAppColors();
@@ -33,56 +50,214 @@ export default function ProfileScreen() {
 
   const p = state.profile;
 
-  const [name, setName] = useState(p.name);
-  const [age, setAge] = useState(String(p.age));
-  const [height, setHeight] = useState(String(p.heightCm));
-  const [weight, setWeight] = useState(String(p.weightKg));
-  const [target, setTarget] = useState(String(p.targetWeightKg));
-  const [stepGoal, setStepGoal] = useState(String(p.stepGoal));
-  const [waterGoal, setWaterGoal] = useState(String(p.waterGoalMl));
-  const [calorieGoal, setCalorieGoal] = useState(
-    String(p.calorieGoal)
+  const [profileImage, setProfileImage] =
+    useState<string | null>(null);
+
+  const [name, setName] =
+    useState(p.name);
+
+  const [age, setAge] =
+    useState(String(p.age));
+
+  const [height, setHeight] =
+    useState(String(p.heightCm));
+
+  const [weight, setWeight] =
+    useState(String(p.weightKg));
+
+  const [target, setTarget] =
+    useState(String(p.targetWeightKg));
+
+  const [stepGoal, setStepGoal] =
+    useState(String(p.stepGoal));
+
+  const [waterGoal, setWaterGoal] =
+    useState(String(p.waterGoalMl));
+
+  const [calorieGoal, setCalorieGoal] =
+    useState(String(p.calorieGoal));
+
+  const [saved, setSaved] =
+    useState(false);
+
+  /* =========================================================
+     LOAD PROFILE PHOTO
+  ========================================================= */
+
+  const loadProfileImage = useCallback(
+    async () => {
+      const uri =
+        await getProfileImage();
+
+      setProfileImage(uri);
+    },
+    []
   );
 
-  const [saved, setSaved] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      void loadProfileImage();
+    }, [loadProfileImage])
+  );
+
+  /* =========================================================
+     PICK PROFILE PHOTO
+  ========================================================= */
+
+  const pickProfilePhoto =
+    async () => {
+      try {
+        const permission =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+        if (!permission.granted) {
+          Alert.alert(
+            "Photo permission required",
+            "Allow FitPulse to access your photos so you can choose a profile picture."
+          );
+
+          return;
+        }
+
+        const result =
+          await ImagePicker.launchImageLibraryAsync(
+            {
+              mediaTypes: ["images"],
+              allowsEditing: true,
+              aspect: [1, 1],
+              quality: 0.9,
+            }
+          );
+
+        if (result.canceled) {
+          return;
+        }
+
+        const asset =
+          result.assets[0];
+
+        if (!asset?.uri) {
+          return;
+        }
+
+        await saveProfileImage(
+          asset.uri
+        );
+
+        setProfileImage(
+          asset.uri
+        );
+      } catch {
+        Alert.alert(
+          "Unable to select photo",
+          "Something went wrong while selecting your profile picture."
+        );
+      }
+    };
+
+  /* =========================================================
+     REMOVE PROFILE PHOTO
+  ========================================================= */
+
+  const removePhoto =
+    async () => {
+      if (!profileImage) {
+        return;
+      }
+
+      Alert.alert(
+        "Remove profile photo?",
+        "Your profile picture will be removed from FitPulse.",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Remove",
+            style: "destructive",
+            onPress: async () => {
+              await removeProfileImage();
+
+              setProfileImage(
+                null
+              );
+            },
+          },
+        ]
+      );
+    };
+
+  /* =========================================================
+     SAVE PROFILE
+  ========================================================= */
 
   const save = () => {
     updateProfile({
-      name: name.trim() || "You",
+      name:
+        name.trim() || "You",
 
       age: Math.max(
         13,
-        Math.min(100, Number(age) || p.age)
+        Math.min(
+          100,
+          Number(age) || p.age
+        )
       ),
 
       heightCm: Math.max(
         120,
-        Math.min(230, Number(height) || p.heightCm)
+        Math.min(
+          230,
+          Number(height) ||
+            p.heightCm
+        )
       ),
 
       weightKg: Math.max(
         30,
-        Math.min(300, Number(weight) || p.weightKg)
+        Math.min(
+          300,
+          Number(weight) ||
+            p.weightKg
+        )
       ),
 
-      targetWeightKg: Math.max(
-        30,
-        Math.min(300, Number(target) || p.targetWeightKg)
-      ),
+      targetWeightKg:
+        Math.max(
+          30,
+          Math.min(
+            300,
+            Number(target) ||
+              p.targetWeightKg
+          )
+        ),
 
       stepGoal: Math.max(
         1000,
-        Math.min(50000, Number(stepGoal) || p.stepGoal)
+        Math.min(
+          50000,
+          Number(stepGoal) ||
+            p.stepGoal
+        )
       ),
 
       waterGoalMl: Math.max(
         500,
-        Math.min(6000, Number(waterGoal) || p.waterGoalMl)
+        Math.min(
+          6000,
+          Number(waterGoal) ||
+            p.waterGoalMl
+        )
       ),
 
       calorieGoal: Math.max(
         1200,
-        Math.min(6000, Number(calorieGoal) || p.calorieGoal)
+        Math.min(
+          6000,
+          Number(calorieGoal) ||
+            p.calorieGoal
+        )
       ),
     });
 
@@ -93,298 +268,783 @@ export default function ProfileScreen() {
     }, 2500);
   };
 
-  const weightDifference = p.weightKg - p.targetWeightKg;
+  /* =========================================================
+     CALCULATIONS
+  ========================================================= */
+
+  const weightDifference =
+    p.weightKg -
+    p.targetWeightKg;
+
+  const targetReached =
+    weightDifference <= 0;
+
+  const initials = (
+    p.name?.trim() ||
+    "You"
+  )
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) =>
+      part.charAt(0).toUpperCase()
+    )
+    .join("");
+
+  const goalProgress =
+    targetReached
+      ? 100
+      : Math.max(
+          0,
+          Math.min(
+            100,
+            Math.round(
+              ((p.weightKg -
+                Math.abs(
+                  weightDifference
+                )) /
+                Math.max(
+                  1,
+                  p.weightKg
+                )) *
+                100
+            )
+          )
+        );
 
   return (
     <Screen>
       <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={
+          styles.content
+        }
+        showsVerticalScrollIndicator={
+          false
+        }
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
+        {/* ===================================================
+            HEADER
+        =================================================== */}
+
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Subtitle>Your personal setup</Subtitle>
-            <Title>Profile</Title>
+            <Subtitle>
+              Personal fitness hub
+            </Subtitle>
+
+            <Title>
+              Profile
+            </Title>
+
+            <Text
+              style={[
+                styles.headerDescription,
+                { color: c.muted },
+              ]}
+            >
+              Manage your identity, body metrics,
+              goals, and daily targets.
+            </Text>
           </View>
 
           <View
             style={[
-              styles.profileIcon,
+              styles.headerIcon,
               {
-                backgroundColor: c.primarySoft,
-                borderColor: c.border,
+                backgroundColor:
+                  `${ACCENT}14`,
+                borderColor:
+                  `${ACCENT}28`,
               },
             ]}
           >
             <Ionicons
-              name="person-outline"
-              size={25}
-              color={c.primary}
+              name="person"
+              size={21}
+              color={ACCENT}
             />
           </View>
         </View>
 
-        {/* Profile overview */}
-        <Card style={styles.overviewCard}>
-          <View style={styles.overviewTop}>
+        {/* ===================================================
+            PROFILE IDENTITY
+        =================================================== */}
+
+        <Card
+          style={[
+            styles.identityCard,
+            {
+              backgroundColor:
+                c.surface,
+              borderColor:
+                c.border,
+            },
+          ]}
+        >
+          <View style={styles.identityTop}>
+            {/* PROFILE PHOTO */}
+
+            <Pressable
+              onPress={pickProfilePhoto}
+              onLongPress={
+                profileImage
+                  ? removePhoto
+                  : undefined
+              }
+              style={({ pressed }) => [
+                styles.avatarWrapper,
+                {
+                  transform: [
+                    {
+                      scale:
+                        pressed
+                          ? 0.96
+                          : 1,
+                    },
+                  ],
+                },
+              ]}
+            >
+              {profileImage ? (
+                <Image
+                  source={{
+                    uri: profileImage,
+                  }}
+                  style={styles.avatarImage}
+                />
+              ) : (
+                <View
+                  style={[
+                    styles.avatarFallback,
+                    {
+                      backgroundColor:
+                        `${ACCENT}16`,
+                      borderColor:
+                        `${ACCENT}30`,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.avatarText,
+                      {
+                        color:
+                          ACCENT,
+                      },
+                    ]}
+                  >
+                    {initials ||
+                      "Y"}
+                  </Text>
+                </View>
+              )}
+
+              {/* Camera badge */}
+
+              <View
+                style={[
+                  styles.cameraBadge,
+                  {
+                    backgroundColor:
+                      ACCENT,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="camera"
+                  size={12}
+                  color="#0A0F0C"
+                />
+              </View>
+            </Pressable>
+
+            <View
+              style={
+                styles.identityInfo
+              }
+            >
+              <Text
+                style={[
+                  styles.identityName,
+                  { color: c.text },
+                ]}
+                numberOfLines={1}
+              >
+                {p.name ||
+                  "You"}
+              </Text>
+
+              <Text
+                style={[
+                  styles.identityMeta,
+                  { color: c.muted },
+                ]}
+              >
+                {p.age} years ·{" "}
+                {p.heightCm} cm
+              </Text>
+
+              <View
+                style={styles.tags}
+              >
+                <Tag
+                  icon="fitness-outline"
+                  text={capitalize(
+                    p.activityLevel
+                  )}
+                  color={c.primary}
+                  bg={c.primarySoft}
+                />
+
+                <Tag
+                  icon="flag-outline"
+                  text={capitalize(
+                    p.weightGoal
+                  )}
+                  color={ACCENT}
+                  bg={`${ACCENT}10`}
+                />
+              </View>
+            </View>
+          </View>
+
+          <View
+            style={[
+              styles.divider,
+              {
+                backgroundColor:
+                  c.border,
+              },
+            ]}
+          />
+
+          <View
+            style={styles.identityStats}
+          >
+            <IdentityStat
+              label="Weight"
+              value={`${p.weightKg.toFixed(
+                1
+              )}`}
+              unit="kg"
+              c={c}
+            />
+
+            <IdentityStat
+              label="Target"
+              value={`${p.targetWeightKg.toFixed(
+                1
+              )}`}
+              unit="kg"
+              c={c}
+            />
+
+            <IdentityStat
+              label="Steps"
+              value={p.stepGoal.toLocaleString()}
+              unit="daily"
+              c={c}
+            />
+          </View>
+
+          <Text
+            style={[
+              styles.photoHint,
+              { color: c.muted },
+            ]}
+          >
+            Tap your photo to change it · hold to remove
+          </Text>
+        </Card>
+
+        {/* ===================================================
+            GOAL PROGRESS
+        =================================================== */}
+
+        <SectionHeader
+          icon="flag-outline"
+          title="Goal progress"
+          subtitle="Your current weight journey"
+        />
+
+        <Card
+          style={[
+            styles.goalCard,
+            {
+              backgroundColor:
+                c.surface,
+              borderColor:
+                c.border,
+            },
+          ]}
+        >
+          <View style={styles.goalTop}>
+            <View style={styles.goalText}>
+              <Text
+                style={[
+                  styles.eyebrow,
+                  { color: c.muted },
+                ]}
+              >
+                WEIGHT TARGET
+              </Text>
+
+              <View
+                style={
+                  styles.weightRow
+                }
+              >
+                <Text
+                  style={[
+                    styles.currentWeight,
+                    {
+                      color:
+                        c.text,
+                    },
+                  ]}
+                >
+                  {p.weightKg.toFixed(
+                    1
+                  )}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.unit,
+                    {
+                      color:
+                        c.muted,
+                    },
+                  ]}
+                >
+                  kg
+                </Text>
+
+                <Ionicons
+                  name="arrow-forward"
+                  size={15}
+                  color={c.muted}
+                  style={{
+                    marginHorizontal:
+                      7,
+                  }}
+                />
+
+                <Text
+                  style={[
+                    styles.targetWeight,
+                    {
+                      color:
+                        ACCENT,
+                    },
+                  ]}
+                >
+                  {p.targetWeightKg.toFixed(
+                    1
+                  )}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.unit,
+                    {
+                      color:
+                        c.muted,
+                    },
+                  ]}
+                >
+                  kg
+                </Text>
+              </View>
+            </View>
+
             <View
               style={[
-                styles.avatar,
+                styles.goalCircle,
                 {
-                  backgroundColor: c.primarySoft,
+                  borderColor:
+                    ACCENT,
+                  backgroundColor:
+                    `${ACCENT}08`,
                 },
               ]}
             >
               <Text
                 style={[
-                  styles.avatarText,
+                  styles.goalPercent,
                   {
-                    color: c.primary,
+                    color:
+                      c.text,
                   },
                 ]}
               >
-                {(p.name || "Y").charAt(0).toUpperCase()}
-              </Text>
-            </View>
-
-            <View style={styles.overviewInfo}>
-              <Text
-                style={[
-                  styles.profileName,
-                  { color: c.text },
-                ]}
-                numberOfLines={1}
-              >
-                {p.name || "You"}
-              </Text>
-
-              <Text
-                style={[
-                  styles.profileDescription,
-                  { color: c.muted },
-                ]}
-              >
-                {p.age} years · {p.heightCm} cm
+                {goalProgress}%
               </Text>
             </View>
           </View>
 
           <View
             style={[
-              styles.overviewDivider,
-              { backgroundColor: c.border },
+              styles.goalTrack,
+              {
+                backgroundColor:
+                  c.surfaceAlt,
+              },
             ]}
-          />
-
-          <View style={styles.quickStats}>
-            <QuickStat
-              icon="scale-outline"
-              label="Weight"
-              value={`${p.weightKg.toFixed(1)} kg`}
-            />
-
-            <QuickStat
-              icon="flag-outline"
-              label="Target"
-              value={`${p.targetWeightKg.toFixed(1)} kg`}
-            />
-
-            <QuickStat
-              icon="footsteps-outline"
-              label="Steps"
-              value={p.stepGoal.toLocaleString()}
+          >
+            <View
+              style={[
+                styles.goalFill,
+                {
+                  backgroundColor:
+                    ACCENT,
+                  width: `${goalProgress}%`,
+                },
+              ]}
             />
           </View>
-        </Card>
 
-        {/* Personal information */}
-        <SectionHeader
-          icon="person-circle-outline"
-          title="Personal information"
-          subtitle="Keep your basic details up to date"
-        />
-
-        <Card>
-          <Label>Name</Label>
-
-          <Input
-            value={name}
-            onChangeText={setName}
-            placeholder="Your name"
-            autoCapitalize="words"
-          />
-
-          <View style={styles.spacer} />
-
-          <Label>Age</Label>
-
-          <Input
-            value={age}
-            onChangeText={setAge}
-            keyboardType="number-pad"
-            placeholder="25"
-          />
-
-          <View style={styles.spacer} />
-
-          <Label>Height (cm)</Label>
-
-          <Input
-            value={height}
-            onChangeText={setHeight}
-            keyboardType="decimal-pad"
-            placeholder="180"
-          />
-        </Card>
-
-        {/* Body goals */}
-        <SectionHeader
-          icon="fitness-outline"
-          title="Body & goals"
-          subtitle="Set the numbers FitPulse uses for calculations"
-        />
-
-        <Card>
-          <Label>Current weight (kg)</Label>
-
-          <Input
-            value={weight}
-            onChangeText={setWeight}
-            keyboardType="decimal-pad"
-            placeholder="80"
-          />
-
-          <View style={styles.spacer} />
-
-          <Label>Target weight (kg)</Label>
-
-          <Input
-            value={target}
-            onChangeText={setTarget}
-            keyboardType="decimal-pad"
-            placeholder="75"
-          />
-
-          <View style={styles.goalHint}>
-            <Ionicons
-              name={
-                weightDifference > 0
-                  ? "trending-down-outline"
-                  : "checkmark-circle-outline"
-              }
-              size={17}
-              color={c.primary}
-            />
+          <View
+            style={styles.goalFooter}
+          >
+            <Text
+              style={[
+                styles.goalFooterText,
+                {
+                  color:
+                    c.muted,
+                },
+              ]}
+            >
+              {targetReached
+                ? "Target reached"
+                : `${Math.abs(
+                    weightDifference
+                  ).toFixed(
+                    1
+                  )} kg remaining`}
+            </Text>
 
             <Text
               style={[
-                styles.goalHintText,
-                { color: c.muted },
+                styles.goalFooterText,
+                {
+                  color:
+                    ACCENT,
+                },
               ]}
             >
-              {weightDifference > 0
-                ? `${weightDifference.toFixed(1)} kg toward your target`
-                : "You are currently at or below your target weight"}
+              {goalProgress}%
             </Text>
           </View>
         </Card>
 
-        {/* Daily targets */}
+        {/* ===================================================
+            PERSONAL INFORMATION
+        =================================================== */}
+
+        <SectionHeader
+          icon="person-circle-outline"
+          title="Personal information"
+          subtitle="Basic information used by FitPulse"
+        />
+
+        <Card
+          style={[
+            styles.formCard,
+            {
+              backgroundColor:
+                c.surface,
+              borderColor:
+                c.border,
+            },
+          ]}
+        >
+          <Field
+            label="Name"
+            icon="person-outline"
+            c={c}
+          >
+            <Input
+              value={name}
+              onChangeText={setName}
+              placeholder="Your name"
+              autoCapitalize="words"
+            />
+          </Field>
+
+          <Field
+            label="Age"
+            icon="calendar-outline"
+            c={c}
+          >
+            <Input
+              value={age}
+              onChangeText={setAge}
+              keyboardType="number-pad"
+              placeholder="25"
+            />
+          </Field>
+
+          <Field
+            label="Height"
+            unit="cm"
+            icon="resize-outline"
+            c={c}
+            last
+          >
+            <Input
+              value={height}
+              onChangeText={setHeight}
+              keyboardType="decimal-pad"
+              placeholder="180"
+            />
+          </Field>
+        </Card>
+
+        {/* ===================================================
+            BODY
+        =================================================== */}
+
+        <SectionHeader
+          icon="body-outline"
+          title="Body & goals"
+          subtitle="Numbers used for fitness calculations"
+        />
+
+        <Card
+          style={[
+            styles.formCard,
+            {
+              backgroundColor:
+                c.surface,
+              borderColor:
+                c.border,
+            },
+          ]}
+        >
+          <Field
+            label="Current weight"
+            unit="kg"
+            icon="scale-outline"
+            c={c}
+          >
+            <Input
+              value={weight}
+              onChangeText={setWeight}
+              keyboardType="decimal-pad"
+              placeholder="80"
+            />
+          </Field>
+
+          <Field
+            label="Target weight"
+            unit="kg"
+            icon="flag-outline"
+            c={c}
+            last
+          >
+            <Input
+              value={target}
+              onChangeText={setTarget}
+              keyboardType="decimal-pad"
+              placeholder="75"
+            />
+          </Field>
+        </Card>
+
+        {/* ===================================================
+            DAILY TARGETS
+        =================================================== */}
+
         <SectionHeader
           icon="analytics-outline"
           title="Daily targets"
-          subtitle="Customize your daily fitness goals"
+          subtitle="Customize your everyday goals"
         />
 
-        <Card>
+        <Card
+          style={[
+            styles.targetsCard,
+            {
+              backgroundColor:
+                c.surface,
+              borderColor:
+                c.border,
+            },
+          ]}
+        >
           <TargetRow
             icon="footsteps-outline"
             title="Step goal"
             description="Daily movement target"
             value={stepGoal}
-            onChangeText={setStepGoal}
+            onChangeText={
+              setStepGoal
+            }
             keyboardType="number-pad"
             suffix="steps"
+            c={c}
           />
 
-          <View
-            style={[
-              styles.targetDivider,
-              { backgroundColor: c.border },
-            ]}
-          />
+          <Divider c={c} />
 
           <TargetRow
             icon="water-outline"
             title="Water goal"
             description="Daily hydration target"
             value={waterGoal}
-            onChangeText={setWaterGoal}
+            onChangeText={
+              setWaterGoal
+            }
             keyboardType="number-pad"
             suffix="ml"
+            c={c}
           />
 
-          <View
-            style={[
-              styles.targetDivider,
-              { backgroundColor: c.border },
-            ]}
-          />
+          <Divider c={c} />
 
           <TargetRow
             icon="flame-outline"
             title="Calorie goal"
-            description="Daily calorie target"
+            description="Daily nutrition target"
             value={calorieGoal}
-            onChangeText={setCalorieGoal}
+            onChangeText={
+              setCalorieGoal
+            }
             keyboardType="number-pad"
             suffix="kcal"
+            c={c}
           />
         </Card>
 
-        {/* Save */}
-        <View style={styles.saveContainer}>
-          <Button
-            title={saved ? "Profile saved" : "Save profile"}
-            onPress={save}
-          />
+        {/* ===================================================
+            SAVE
+        =================================================== */}
 
-          {saved && (
-            <View style={styles.savedMessage}>
-              <Ionicons
-                name="checkmark-circle"
-                size={17}
-                color={c.primary}
-              />
+        <Pressable
+          onPress={save}
+          style={({ pressed }) => [
+            styles.saveButton,
+            {
+              backgroundColor:
+                c.primarySoft,
+              borderColor:
+                `${c.primary}45`,
+              opacity:
+                pressed
+                  ? 0.72
+                  : 1,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.saveCircle,
+              {
+                backgroundColor:
+                  `${ACCENT}14`,
+              },
+            ]}
+          >
+            <Ionicons
+              name={
+                saved
+                  ? "checkmark"
+                  : "save-outline"
+              }
+              size={18}
+              color={ACCENT}
+            />
+          </View>
 
-              <Text
-                style={[
-                  styles.savedText,
-                  { color: c.primary },
-                ]}
-              >
-                Your fitness profile has been updated.
-              </Text>
-            </View>
-          )}
-        </View>
+          <View
+            style={styles.saveText}
+          >
+            <Text
+              style={[
+                styles.saveTitle,
+                {
+                  color:
+                    c.text,
+                },
+              ]}
+            >
+              {saved
+                ? "Profile saved"
+                : "Save profile"}
+            </Text>
 
-        {/* Calorie engine */}
+            <Text
+              style={[
+                styles.saveSubtitle,
+                {
+                  color:
+                    c.muted,
+                },
+              ]}
+            >
+              {saved
+                ? "Your changes are now active"
+                : "Apply your latest changes"}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.saveArrow,
+              {
+                backgroundColor:
+                  `${ACCENT}12`,
+              },
+            ]}
+          >
+            <Ionicons
+              name={
+                saved
+                  ? "checkmark"
+                  : "arrow-forward"
+              }
+              size={16}
+              color={ACCENT}
+            />
+          </View>
+        </Pressable>
+
+        {/* ===================================================
+            CALORIE ENGINE
+        =================================================== */}
+
         <SectionHeader
           icon="flame-outline"
           title="Calorie engine"
-          subtitle="Your estimated daily energy requirements"
+          subtitle="Estimated daily energy requirements"
         />
 
-        <Card>
-          <View style={styles.engineHeader}>
+        <Card
+          style={[
+            styles.engineCard,
+            {
+              backgroundColor:
+                c.surface,
+              borderColor:
+                c.border,
+            },
+          ]}
+        >
+          <View
+            style={
+              styles.engineHeader
+            }
+          >
             <View>
               <Text
                 style={[
                   styles.engineTitle,
-                  { color: c.text },
+                  {
+                    color:
+                      c.text,
+                  },
                 ]}
               >
                 Energy overview
@@ -393,186 +1053,294 @@ export default function ProfileScreen() {
               <Text
                 style={[
                   styles.engineSubtitle,
-                  { color: c.muted },
+                  {
+                    color:
+                      c.muted,
+                  },
                 ]}
               >
-                Based on your current profile
+                Calculated from your current profile
               </Text>
             </View>
 
             <View
               style={[
-                styles.engineIcon,
+                styles.engineCircle,
                 {
-                  backgroundColor: c.primarySoft,
+                  backgroundColor:
+                    `${ACCENT}14`,
+                  borderColor:
+                    `${ACCENT}25`,
                 },
               ]}
             >
               <Ionicons
                 name="flash-outline"
-                size={20}
-                color={c.primary}
+                size={19}
+                color={ACCENT}
               />
             </View>
           </View>
 
-          <View style={styles.energyGrid}>
+          <View
+            style={styles.energyGrid}
+          >
             <EnergyStat
               label="BMR"
               value={`${bmr}`}
               unit="kcal/day"
               icon="bed-outline"
+              c={c}
             />
 
             <EnergyStat
-              label="Estimated TDEE"
+              label="TDEE"
               value={`${tdee}`}
               unit="kcal/day"
               icon="walk-outline"
+              c={c}
             />
           </View>
 
           <View
             style={[
-              styles.targetCalories,
+              styles.calorieTarget,
               {
-                backgroundColor: c.primarySoft,
+                backgroundColor:
+                  `${ACCENT}08`,
+                borderColor:
+                  `${ACCENT}24`,
               },
             ]}
           >
-            <View style={styles.targetCaloriesIcon}>
+            <View
+              style={[
+                styles.calorieTargetCircle,
+                {
+                  backgroundColor:
+                    `${ACCENT}14`,
+                },
+              ]}
+            >
               <Ionicons
                 name="flame-outline"
-                size={18}
-                color={c.primary}
+                size={17}
+                color={ACCENT}
               />
             </View>
 
-            <View style={{ flex: 1 }}>
+            <View
+              style={
+                styles.calorieTargetText
+              }
+            >
               <Text
                 style={[
-                  styles.targetCaloriesLabel,
-                  { color: c.muted },
+                  styles.calorieTargetLabel,
+                  {
+                    color:
+                      c.muted,
+                  },
                 ]}
               >
-                Your daily target
+                Current daily target
               </Text>
 
               <Text
                 style={[
-                  styles.targetCaloriesValue,
-                  { color: c.text },
+                  styles.calorieTargetValue,
+                  {
+                    color:
+                      c.text,
+                  },
                 ]}
               >
-                {p.calorieGoal.toLocaleString()} kcal
+                {p.calorieGoal.toLocaleString()}{" "}
+                kcal
               </Text>
             </View>
           </View>
         </Card>
 
-        {/* Current options */}
-        <SectionHeader
-          icon="options-outline"
-          title="Current options"
-          subtitle="Your current fitness preferences"
-        />
+        {/* ===================================================
+            SETTINGS
+        =================================================== */}
 
-        <Card>
-          <OptionRow
-            icon="male-female-outline"
-            label="Gender"
-            value={capitalize(p.gender)}
-          />
-
-          <OptionRow
-            icon="speedometer-outline"
-            label="Activity level"
-            value={capitalize(p.activityLevel)}
-          />
-
-          <OptionRow
-            icon="flag-outline"
-            label="Weight goal"
-            value={capitalize(p.weightGoal)}
-          />
-
-          <OptionRow
-            icon="water-outline"
-            label="Water target"
-            value={`${p.waterGoalMl.toLocaleString()} ml`}
-            last
-          />
-        </Card>
-
-        {/* Settings */}
-        <Button
-          title="Open settings"
-          variant="secondary"
-          onPress={() => router.push("/settings")}
-        />
-
-        <View style={styles.infoBox}>
-          <Ionicons
-            name="information-circle-outline"
-            size={19}
-            color={c.primary}
-          />
-
-          <Text
+        <Pressable
+          onPress={() =>
+            router.push(
+              "/settings"
+            )
+          }
+          style={({ pressed }) => [
+            styles.settingsButton,
+            {
+              backgroundColor:
+                c.surface,
+              borderColor:
+                c.border,
+              opacity:
+                pressed
+                  ? 0.72
+                  : 1,
+            },
+          ]}
+        >
+          <View
             style={[
-              styles.infoText,
-              { color: c.muted },
+              styles.settingsCircle,
+              {
+                backgroundColor:
+                  c.surfaceAlt,
+              },
             ]}
           >
-            FitPulse uses your profile information to estimate
-            calorie needs, walking calories, hydration targets,
-            and fitness progress.
-          </Text>
-        </View>
+            <Ionicons
+              name="settings-outline"
+              size={18}
+              color={c.muted}
+            />
+          </View>
 
-        <View style={styles.footerSpace} />
+          <View
+            style={styles.settingsText}
+          >
+            <Text
+              style={[
+                styles.settingsTitle,
+                {
+                  color:
+                    c.text,
+                },
+              ]}
+            >
+              Open settings
+            </Text>
+
+            <Text
+              style={[
+                styles.settingsSubtitle,
+                {
+                  color:
+                    c.muted,
+                },
+              ]}
+            >
+              Notifications and app preferences
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={c.muted}
+          />
+        </Pressable>
+
+        <View
+          style={styles.bottomSpace}
+        />
       </ScrollView>
     </Screen>
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* Components                                                                 */
-/* -------------------------------------------------------------------------- */
+/* ========================================================= */
+/* TAG                                                        */
+/* ========================================================= */
+
+function Tag({
+  icon,
+  text,
+  color,
+  bg,
+}: {
+  icon: IconName;
+  text: string;
+  color: string;
+  bg: string;
+}) {
+  return (
+    <View
+      style={[
+        styles.tag,
+        {
+          backgroundColor:
+            bg,
+          borderColor:
+            `${color}35`,
+        },
+      ]}
+    >
+      <Ionicons
+        name={icon}
+        size={10}
+        color={color}
+      />
+
+      <Text
+        style={[
+          styles.tagText,
+          {
+            color,
+          },
+        ]}
+      >
+        {text}
+      </Text>
+    </View>
+  );
+}
+
+/* ========================================================= */
+/* SECTION HEADER                                              */
+/* ========================================================= */
 
 function SectionHeader({
   icon,
   title,
   subtitle,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName;
   title: string;
   subtitle: string;
 }) {
   const c = useAppColors();
 
   return (
-    <View style={styles.sectionHeader}>
+    <View
+      style={styles.sectionHeader}
+    >
       <View
         style={[
           styles.sectionIcon,
           {
-            backgroundColor: c.primarySoft,
+            backgroundColor:
+              `${ACCENT}14`,
+            borderColor:
+              `${ACCENT}25`,
           },
         ]}
       >
         <Ionicons
           name={icon}
-          size={18}
-          color={c.primary}
+          size={17}
+          color={ACCENT}
         />
       </View>
 
-      <View style={styles.sectionText}>
+      <View
+        style={
+          styles.sectionText
+        }
+      >
         <Text
           style={[
             styles.sectionTitle,
-            { color: c.text },
+            {
+              color:
+                c.text,
+            },
           ]}
         >
           {title}
@@ -581,7 +1349,10 @@ function SectionHeader({
         <Text
           style={[
             styles.sectionSubtitle,
-            { color: c.muted },
+            {
+              color:
+                c.muted,
+            },
           ]}
         >
           {subtitle}
@@ -591,45 +1362,138 @@ function SectionHeader({
   );
 }
 
-function QuickStat({
-  icon,
+/* ========================================================= */
+/* IDENTITY STAT                                               */
+/* ========================================================= */
+
+function IdentityStat({
   label,
   value,
+  unit,
+  c,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
   label: string;
   value: string;
+  unit: string;
+  c: ReturnType<
+    typeof useAppColors
+  >;
 }) {
-  const c = useAppColors();
-
   return (
-    <View style={styles.quickStat}>
-      <Ionicons
-        name={icon}
-        size={17}
-        color={c.primary}
-      />
-
+    <View
+      style={
+        styles.identityStat
+      }
+    >
       <Text
         style={[
-          styles.quickLabel,
-          { color: c.muted },
+          styles.identityStatLabel,
+          {
+            color:
+              c.muted,
+          },
         ]}
       >
         {label}
       </Text>
 
-      <Text
-        style={[
-          styles.quickValue,
-          { color: c.text },
-        ]}
+      <View
+        style={
+          styles.identityValueRow
+        }
       >
-        {value}
-      </Text>
+        <Text
+          style={[
+            styles.identityStatValue,
+            {
+              color:
+                c.text,
+            },
+          ]}
+        >
+          {value}
+        </Text>
+
+        <Text
+          style={[
+            styles.identityStatUnit,
+            {
+              color:
+                c.muted,
+            },
+          ]}
+        >
+          {unit}
+        </Text>
+      </View>
     </View>
   );
 }
+
+/* ========================================================= */
+/* FIELD                                                        */
+/* ========================================================= */
+
+function Field({
+  label,
+  unit,
+  icon,
+  children,
+  c,
+  last = false,
+}: {
+  label: string;
+  unit?: string;
+  icon: IconName;
+  children: React.ReactNode;
+  c: ReturnType<
+    typeof useAppColors
+  >;
+  last?: boolean;
+}) {
+  return (
+    <View
+      style={[
+        styles.field,
+        !last && styles.fieldSpacing,
+      ]}
+    >
+      <View
+        style={
+          styles.fieldLabel
+        }
+      >
+        <View
+          style={[
+            styles.fieldCircle,
+            {
+              backgroundColor:
+                `${ACCENT}12`,
+            },
+          ]}
+        >
+          <Ionicons
+            name={icon}
+            size={13}
+            color={ACCENT}
+          />
+        </View>
+
+        <Label>
+          {unit
+            ? `${label} (${unit})`
+            : label}
+        </Label>
+      </View>
+
+      {children}
+    </View>
+  );
+}
+
+/* ========================================================= */
+/* TARGET ROW                                                  */
+/* ========================================================= */
 
 function TargetRow({
   icon,
@@ -639,39 +1503,59 @@ function TargetRow({
   onChangeText,
   keyboardType,
   suffix,
+  c,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName;
   title: string;
   description: string;
   value: string;
-  onChangeText: (value: string) => void;
-  keyboardType?: "number-pad" | "decimal-pad";
+  onChangeText: (
+    value: string
+  ) => void;
+  keyboardType?:
+    | "number-pad"
+    | "decimal-pad";
   suffix: string;
+  c: ReturnType<
+    typeof useAppColors
+  >;
 }) {
-  const c = useAppColors();
-
   return (
-    <View style={styles.targetRow}>
+    <View
+      style={
+        styles.targetRow
+      }
+    >
       <View
         style={[
-          styles.targetIcon,
+          styles.targetCircle,
           {
-            backgroundColor: c.primarySoft,
+            backgroundColor:
+              `${ACCENT}12`,
+            borderColor:
+              `${ACCENT}22`,
           },
         ]}
       >
         <Ionicons
           name={icon}
-          size={19}
-          color={c.primary}
+          size={17}
+          color={ACCENT}
         />
       </View>
 
-      <View style={styles.targetInfo}>
+      <View
+        style={
+          styles.targetInfo
+        }
+      >
         <Text
           style={[
             styles.targetTitle,
-            { color: c.text },
+            {
+              color:
+                c.text,
+            },
           ]}
         >
           {title}
@@ -680,25 +1564,41 @@ function TargetRow({
         <Text
           style={[
             styles.targetDescription,
-            { color: c.muted },
+            {
+              color:
+                c.muted,
+            },
           ]}
         >
           {description}
         </Text>
       </View>
 
-      <View style={styles.targetInputWrapper}>
+      <View
+        style={
+          styles.targetInputWrapper
+        }
+      >
         <Input
           value={value}
-          onChangeText={onChangeText}
-          keyboardType={keyboardType}
-          style={styles.targetInput}
+          onChangeText={
+            onChangeText
+          }
+          keyboardType={
+            keyboardType
+          }
+          style={
+            styles.targetInput
+          }
         />
 
         <Text
           style={[
             styles.targetSuffix,
-            { color: c.muted },
+            {
+              color:
+                c.muted,
+            },
           ]}
         >
           {suffix}
@@ -708,39 +1608,60 @@ function TargetRow({
   );
 }
 
+/* ========================================================= */
+/* ENERGY STAT                                                 */
+/* ========================================================= */
+
 function EnergyStat({
   label,
   value,
   unit,
   icon,
+  c,
 }: {
   label: string;
   value: string;
   unit: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName;
+  c: ReturnType<
+    typeof useAppColors
+  >;
 }) {
-  const c = useAppColors();
-
   return (
     <View
       style={[
         styles.energyStat,
         {
-          backgroundColor: c.surfaceAlt,
-          borderColor: c.border,
+          backgroundColor:
+            c.surfaceAlt,
+          borderColor:
+            c.border,
         },
       ]}
     >
-      <Ionicons
-        name={icon}
-        size={19}
-        color={c.primary}
-      />
+      <View
+        style={[
+          styles.energyCircle,
+          {
+            backgroundColor:
+              `${ACCENT}12`,
+          },
+        ]}
+      >
+        <Ionicons
+          name={icon}
+          size={17}
+          color={ACCENT}
+        />
+      </View>
 
       <Text
         style={[
           styles.energyLabel,
-          { color: c.muted },
+          {
+            color:
+              c.muted,
+          },
         ]}
       >
         {label}
@@ -749,7 +1670,10 @@ function EnergyStat({
       <Text
         style={[
           styles.energyValue,
-          { color: c.text },
+          {
+            color:
+              c.text,
+          },
         ]}
       >
         {value}
@@ -758,7 +1682,10 @@ function EnergyStat({
       <Text
         style={[
           styles.energyUnit,
-          { color: c.muted },
+          {
+            color:
+              c.muted,
+          },
         ]}
       >
         {unit}
@@ -767,388 +1694,659 @@ function EnergyStat({
   );
 }
 
-function OptionRow({
-  icon,
-  label,
-  value,
-  last = false,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  value: string;
-  last?: boolean;
-}) {
-  const c = useAppColors();
+/* ========================================================= */
+/* DIVIDER                                                      */
+/* ========================================================= */
 
+function Divider({
+  c,
+}: {
+  c: ReturnType<
+    typeof useAppColors
+  >;
+}) {
   return (
     <View
       style={[
-        styles.optionRow,
-        !last && {
-          borderBottomWidth: 1,
-          borderBottomColor: c.border,
+        styles.divider,
+        {
+          backgroundColor:
+            c.border,
         },
       ]}
-    >
-      <Ionicons
-        name={icon}
-        size={19}
-        color={c.primary}
-      />
-
-      <Text
-        style={[
-          styles.optionLabel,
-          { color: c.muted },
-        ]}
-      >
-        {label}
-      </Text>
-
-      <Text
-        style={[
-          styles.optionValue,
-          { color: c.text },
-        ]}
-      >
-        {value}
-      </Text>
-    </View>
+    />
   );
 }
 
-function capitalize(value: string) {
-  if (!value) return "Not set";
+/* ========================================================= */
+/* CAPITALIZE                                                   */
+/* ========================================================= */
 
-  return value.charAt(0).toUpperCase() + value.slice(1);
+function capitalize(
+  value: string
+) {
+  if (!value) {
+    return "Not set";
+  }
+
+  return (
+    value.charAt(0).toUpperCase() +
+    value.slice(1)
+  );
 }
 
-/* -------------------------------------------------------------------------- */
-/* Styles                                                                     */
-/* -------------------------------------------------------------------------- */
+/* ========================================================= */
+/* STYLES                                                       */
+/* ========================================================= */
 
-const styles = StyleSheet.create({
-  content: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 140,
-  },
+const styles =
+  StyleSheet.create({
+    content: {
+      paddingHorizontal: 16,
+      paddingTop: 14,
+      paddingBottom: 140,
+    },
 
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 18,
-  },
+    /* Header */
 
-  headerText: {
-    flex: 1,
-  },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent:
+        "space-between",
+      marginBottom: 19,
+    },
 
-  profileIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+    headerText: {
+      flex: 1,
+      paddingRight: 12,
+    },
 
-  overviewCard: {
-    padding: 18,
-  },
+    headerDescription: {
+      fontSize: 12,
+      lineHeight: 18,
+      marginTop: 4,
+    },
 
-  overviewTop: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+    headerIcon: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      borderWidth: 1,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
 
-  avatar: {
-    width: 58,
-    height: 58,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+    /* Identity */
 
-  avatarText: {
-    fontSize: 25,
-    fontWeight: "900",
-  },
+    identityCard: {
+      borderRadius: 26,
+      padding: 17,
+      marginBottom: 25,
+    },
 
-  overviewInfo: {
-    flex: 1,
-    marginLeft: 14,
-  },
+    identityTop: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
 
-  profileName: {
-    fontSize: 20,
-    fontWeight: "900",
-  },
+    avatarWrapper: {
+      width: 68,
+      height: 68,
+      position: "relative",
+    },
 
-  profileDescription: {
-    fontSize: 13,
-    marginTop: 4,
-  },
+    avatarImage: {
+      width: 68,
+      height: 68,
+      borderRadius: 34,
+    },
 
-  overviewDivider: {
-    height: 1,
-    marginVertical: 18,
-  },
+    avatarFallback: {
+      width: 68,
+      height: 68,
+      borderRadius: 34,
+      borderWidth: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
 
-  quickStats: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
+    avatarText: {
+      fontSize: 23,
+      fontWeight: "900",
+    },
 
-  quickStat: {
-    flex: 1,
-    alignItems: "center",
-  },
+    cameraBadge: {
+      position: "absolute",
+      right: -1,
+      bottom: -1,
+      width: 25,
+      height: 25,
+      borderRadius: 13,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+      borderWidth: 2,
+      borderColor:
+        "#111812",
+    },
 
-  quickLabel: {
-    fontSize: 11,
-    marginTop: 5,
-  },
+    identityInfo: {
+      flex: 1,
+      marginLeft: 13,
+    },
 
-  quickValue: {
-    fontSize: 13,
-    fontWeight: "800",
-    marginTop: 3,
-  },
+    identityName: {
+      fontSize: 20,
+      fontWeight: "900",
+    },
 
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 10,
-    marginBottom: 10,
-  },
+    identityMeta: {
+      fontSize: 11,
+      marginTop: 3,
+    },
 
-  sectionIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 13,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+    tags: {
+      flexDirection: "row",
+      gap: 6,
+      marginTop: 8,
+    },
 
-  sectionText: {
-    flex: 1,
-    marginLeft: 11,
-  },
+    tag: {
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      gap: 4,
+      borderRadius: 999,
+      borderWidth: 1,
+      paddingHorizontal: 7,
+      paddingVertical: 4,
+    },
 
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "900",
-  },
+    tagText: {
+      fontSize: 8,
+      fontWeight: "900",
+    },
 
-  sectionSubtitle: {
-    fontSize: 11,
-    marginTop: 2,
-  },
+    divider: {
+      height: 1,
+      marginVertical: 17,
+    },
 
-  spacer: {
-    height: 14,
-  },
+    identityStats: {
+      flexDirection: "row",
+    },
 
-  goalHint: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 12,
-    gap: 7,
-  },
+    identityStat: {
+      flex: 1,
+    },
 
-  goalHintText: {
-    flex: 1,
-    fontSize: 12,
-    lineHeight: 18,
-  },
+    identityStatLabel: {
+      fontSize: 9,
+      fontWeight: "600",
+    },
 
-  targetRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: 70,
-  },
+    identityValueRow: {
+      flexDirection:
+        "row",
+      alignItems:
+        "baseline",
+      marginTop: 3,
+    },
 
-  targetIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 13,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+    identityStatValue: {
+      fontSize: 16,
+      fontWeight: "900",
+    },
 
-  targetInfo: {
-    flex: 1,
-    marginLeft: 11,
-  },
+    identityStatUnit: {
+      fontSize: 9,
+      marginLeft: 3,
+    },
 
-  targetTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-  },
+    photoHint: {
+      textAlign: "center",
+      fontSize: 9,
+      marginTop: 13,
+    },
 
-  targetDescription: {
-    fontSize: 11,
-    marginTop: 3,
-  },
+    /* Goal */
 
-  targetInputWrapper: {
-    width: 105,
-    position: "relative",
-  },
+    goalCard: {
+      borderRadius: 23,
+      padding: 17,
+      marginBottom: 25,
+    },
 
-  targetInput: {
-    minHeight: 44,
-    paddingRight: 34,
-    textAlign: "right",
-    fontSize: 14,
-    fontWeight: "700",
-  },
+    goalTop: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent:
+        "space-between",
+    },
 
-  targetSuffix: {
-    position: "absolute",
-    right: 9,
-    top: 14,
-    fontSize: 9,
-    fontWeight: "700",
-  },
+    goalText: {
+      flex: 1,
+    },
 
-  targetDivider: {
-    height: 1,
-    marginVertical: 4,
-  },
+    eyebrow: {
+      fontSize: 9,
+      fontWeight: "900",
+      letterSpacing: 1,
+    },
 
-  saveContainer: {
-    marginTop: 4,
-    marginBottom: 8,
-  },
+    weightRow: {
+      flexDirection:
+        "row",
+      alignItems:
+        "baseline",
+      marginTop: 4,
+    },
 
-  savedMessage: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    marginTop: 10,
-  },
+    currentWeight: {
+      fontSize: 28,
+      fontWeight: "900",
+    },
 
-  savedText: {
-    fontSize: 12,
-    fontWeight: "700",
-  },
+    targetWeight: {
+      fontSize: 21,
+      fontWeight: "900",
+    },
 
-  engineHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
+    unit: {
+      fontSize: 9,
+      marginLeft: 3,
+    },
 
-  engineTitle: {
-    fontSize: 16,
-    fontWeight: "900",
-  },
+    goalCircle: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      borderWidth: 3,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
 
-  engineSubtitle: {
-    fontSize: 11,
-    marginTop: 3,
-  },
+    goalPercent: {
+      fontSize: 14,
+      fontWeight: "900",
+    },
 
-  engineIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 13,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+    goalTrack: {
+      height: 7,
+      borderRadius: 999,
+      overflow: "hidden",
+      marginTop: 17,
+    },
 
-  energyGrid: {
-    flexDirection: "row",
-    gap: 10,
-  },
+    goalFill: {
+      height: "100%",
+      borderRadius: 999,
+    },
 
-  energyStat: {
-    flex: 1,
-    borderRadius: 15,
-    borderWidth: 1,
-    padding: 13,
-  },
+    goalFooter: {
+      flexDirection:
+        "row",
+      justifyContent:
+        "space-between",
+      marginTop: 7,
+    },
 
-  energyLabel: {
-    fontSize: 11,
-    marginTop: 8,
-  },
+    goalFooterText: {
+      fontSize: 9,
+      fontWeight: "700",
+    },
 
-  energyValue: {
-    fontSize: 22,
-    fontWeight: "900",
-    marginTop: 2,
-  },
+    /* Section */
 
-  energyUnit: {
-    fontSize: 10,
-    marginTop: 1,
-  },
+    sectionHeader: {
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      marginBottom: 10,
+    },
 
-  targetCalories: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 15,
-    padding: 12,
-    marginTop: 10,
-  },
+    sectionIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      borderWidth: 1,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
 
-  targetCaloriesIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+    sectionText: {
+      flex: 1,
+      marginLeft: 10,
+    },
 
-  targetCaloriesLabel: {
-    fontSize: 10,
-    marginBottom: 2,
-  },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: "900",
+    },
 
-  targetCaloriesValue: {
-    fontSize: 18,
-    fontWeight: "900",
-  },
+    sectionSubtitle: {
+      fontSize: 10,
+      lineHeight: 15,
+      marginTop: 2,
+    },
 
-  optionRow: {
-    minHeight: 52,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 7,
-  },
+    /* Forms */
 
-  optionLabel: {
-    flex: 1,
-    marginLeft: 11,
-    fontSize: 13,
-  },
+    formCard: {
+      borderRadius: 21,
+      padding: 16,
+      marginBottom: 18,
+    },
 
-  optionValue: {
-    fontSize: 13,
-    fontWeight: "800",
-  },
+    field: {
+      width: "100%",
+    },
 
-  infoBox: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 9,
-    marginTop: 16,
-    paddingHorizontal: 4,
-  },
+    fieldSpacing: {
+      marginBottom: 15,
+    },
 
-  infoText: {
-    flex: 1,
-    fontSize: 11,
-    lineHeight: 18,
-  },
+    fieldLabel: {
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      marginBottom: 7,
+    },
 
-  footerSpace: {
-    height: 20,
-  },
-});
+    fieldCircle: {
+      width: 25,
+      height: 25,
+      borderRadius: 13,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+      marginRight: 7,
+    },
+
+    /* Targets */
+
+    targetsCard: {
+      borderRadius: 21,
+      paddingHorizontal: 11,
+      paddingVertical: 7,
+      marginBottom: 18,
+    },
+
+    targetRow: {
+      minHeight: 67,
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+    },
+
+    targetCircle: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      borderWidth: 1,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
+
+    targetInfo: {
+      flex: 1,
+      marginLeft: 10,
+      paddingRight: 8,
+    },
+
+    targetTitle: {
+      fontSize: 13,
+      fontWeight: "800",
+    },
+
+    targetDescription: {
+      fontSize: 9,
+      lineHeight: 15,
+      marginTop: 2,
+    },
+
+    targetInputWrapper: {
+      width: 105,
+      position:
+        "relative",
+    },
+
+    targetInput: {
+      minHeight: 44,
+      paddingRight: 33,
+      textAlign: "right",
+      fontSize: 13,
+      fontWeight: "800",
+    },
+
+    targetSuffix: {
+      position:
+        "absolute",
+      right: 9,
+      top: 14,
+      fontSize: 8,
+      fontWeight: "700",
+    },
+
+    /* Save */
+
+    saveButton: {
+      minHeight: 64,
+      borderRadius: 999,
+      borderWidth: 1,
+      paddingHorizontal: 10,
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      marginBottom: 25,
+    },
+
+    saveCircle: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
+
+    saveText: {
+      flex: 1,
+      marginLeft: 11,
+    },
+
+    saveTitle: {
+      fontSize: 14,
+      fontWeight: "900",
+    },
+
+    saveSubtitle: {
+      fontSize: 10,
+      marginTop: 2,
+    },
+
+    saveArrow: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
+
+    /* Engine */
+
+    engineCard: {
+      borderRadius: 22,
+      padding: 16,
+      marginBottom: 18,
+    },
+
+    engineHeader: {
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      justifyContent:
+        "space-between",
+      marginBottom: 15,
+    },
+
+    engineTitle: {
+      fontSize: 16,
+      fontWeight: "900",
+    },
+
+    engineSubtitle: {
+      fontSize: 10,
+      marginTop: 2,
+    },
+
+    engineCircle: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      borderWidth: 1,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
+
+    energyGrid: {
+      flexDirection:
+        "row",
+      gap: 9,
+    },
+
+    energyStat: {
+      flex: 1,
+      minHeight: 108,
+      borderRadius: 18,
+      borderWidth: 1,
+      padding: 12,
+    },
+
+    energyCircle: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
+
+    energyLabel: {
+      fontSize: 9,
+      marginTop: 8,
+    },
+
+    energyValue: {
+      fontSize: 21,
+      fontWeight: "900",
+      marginTop: 2,
+    },
+
+    energyUnit: {
+      fontSize: 8,
+      marginTop: 1,
+    },
+
+    calorieTarget: {
+      minHeight: 58,
+      borderRadius: 18,
+      borderWidth: 1,
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      paddingHorizontal: 10,
+      marginTop: 9,
+    },
+
+    calorieTargetCircle: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
+
+    calorieTargetText: {
+      flex: 1,
+      marginLeft: 9,
+    },
+
+    calorieTargetLabel: {
+      fontSize: 9,
+    },
+
+    calorieTargetValue: {
+      fontSize: 17,
+      fontWeight: "900",
+      marginTop: 1,
+    },
+
+    /* Settings */
+
+    settingsButton: {
+      minHeight: 62,
+      borderRadius: 999,
+      borderWidth: 1,
+      paddingHorizontal: 11,
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+    },
+
+    settingsCircle: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
+
+    settingsText: {
+      flex: 1,
+      marginLeft: 10,
+    },
+
+    settingsTitle: {
+      fontSize: 13,
+      fontWeight: "900",
+    },
+
+    settingsSubtitle: {
+      fontSize: 9,
+      marginTop: 2,
+    },
+
+    bottomSpace: {
+      height: 20,
+    },
+  });

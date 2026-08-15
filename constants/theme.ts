@@ -1,37 +1,56 @@
 export const colors = {
   light: {
-    background: "#F5F7F8",
+    background: "#F4F7F3",
     surface: "#FFFFFF",
-    surfaceAlt: "#EEF2F1",
-    text: "#101817",
-    muted: "#6B7472",
-    border: "#DDE4E1",
+    surfaceAlt: "#EAF0EB",
 
-    primary: "#18A77A",
-    primarySoft: "#DDF7ED",
+    text: "#101510",
+    muted: "#6D776F",
+    border: "#D9E1DB",
 
-    accent: "#F2B84B",
-    danger: "#EF5B68",
-    blue: "#4F8CFF",
+    primary: "#8EDC18",
+    primarySoft: "#E7F8C8",
+
+    accent: "#B7FF1A",
+    danger: "#E9545B",
 
     white: "#FFFFFF",
   },
 
   dark: {
-    background: "#090F0D",
-    surface: "#111A17",
-    surfaceAlt: "#18231F",
+    background: "#0A0F0C",
+    surface: "#111812",
+    surfaceAlt: "#182019",
 
-    text: "#F2F7F5",
-    muted: "#8E9C96",
-    border: "#26332E",
+    text: "#F1F5EF",
+    muted: "#8D988F",
+    border: "#263129",
 
-    primary: "#20C997",
-    primarySoft: "#12382D",
+    /*
+     * Main FitPulse brand color.
+     * Use this for:
+     * - progress rings
+     * - progress bars
+     * - active navigation
+     * - important icons
+     * - primary actions
+     */
+    primary: "#B7FF1A",
 
-    accent: "#F5B84B",
-    danger: "#FF6673",
-    blue: "#5B9BFF",
+    /*
+     * Softer version used behind icons,
+     * selected states and subtle highlights.
+     */
+    primarySoft: "#1C3510",
+
+    /*
+     * Kept for compatibility with existing
+     * components, but avoid using it as a
+     * separate visual accent throughout the app.
+     */
+    accent: "#B7FF1A",
+
+    danger: "#FF626B",
 
     white: "#FFFFFF",
   },

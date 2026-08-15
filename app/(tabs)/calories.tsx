@@ -1,10 +1,15 @@
 import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import {
-  Button,
   Card,
   Screen,
   Subtitle,
@@ -14,99 +19,260 @@ import {
 
 import { useFitness } from "@/hooks/useFitness";
 
+const ACCENT = "#B7FF1A";
+
+type IconName = keyof typeof Ionicons.glyphMap;
+
 export default function CaloriesScreen() {
   const c = useAppColors();
-  const { state, todayFoods, today } = useFitness();
+  const { state, todayFoods, today } =
+    useFitness();
 
-  const calorieGoal = Math.max(1, state.profile.calorieGoal);
+  /* =========================================================
+     REAL DATA
+  ========================================================= */
+
+  const calorieGoal = Math.max(
+    1,
+    state.profile.calorieGoal
+  );
 
   const consumed = todayFoods.reduce(
-    (sum, food) => sum + food.calories * food.servings,
+    (sum, food) =>
+      sum +
+      food.calories *
+        food.servings,
     0
   );
 
   const protein = todayFoods.reduce(
-    (sum, food) => sum + food.protein * food.servings,
+    (sum, food) =>
+      sum +
+      food.protein *
+        food.servings,
     0
   );
 
   const carbs = todayFoods.reduce(
-    (sum, food) => sum + food.carbs * food.servings,
+    (sum, food) =>
+      sum +
+      food.carbs *
+        food.servings,
     0
   );
 
   const fat = todayFoods.reduce(
-    (sum, food) => sum + food.fat * food.servings,
+    (sum, food) =>
+      sum +
+      food.fat *
+        food.servings,
     0
   );
 
-  const remaining = Math.max(0, calorieGoal - consumed);
+  const remaining = Math.max(
+    0,
+    calorieGoal - consumed
+  );
 
-  const progress = Math.min(1, consumed / calorieGoal);
+  const progress = Math.min(
+    1,
+    consumed /
+      calorieGoal
+  );
 
-  const consumedPercent = Math.round(progress * 100);
+  const percentage = Math.min(
+    100,
+    Math.round(progress * 100)
+  );
+
+  const caloriesOver =
+    Math.max(
+      0,
+      consumed -
+        calorieGoal
+    );
+
+  const totalMacros =
+    protein +
+    carbs +
+    fat;
+
+  const calorieStatus =
+    consumed === 0
+      ? "Not started"
+      : consumed <=
+          calorieGoal
+        ? "On target"
+        : "Over target";
+
+  const insightTitle =
+    consumed === 0
+      ? "Ready to track"
+      : consumed <=
+          calorieGoal
+        ? "You're on track"
+        : "Target reached";
+
+  const insightText =
+    consumed === 0
+      ? "Log your first meal to start building today's nutrition picture."
+      : consumed <=
+          calorieGoal
+        ? `${remaining.toLocaleString()} kcal remain in your daily target.`
+        : `${caloriesOver.toLocaleString()} kcal above your current daily target.`;
 
   return (
     <Screen>
       <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={
+          styles.content
+        }
+        showsVerticalScrollIndicator={
+          false
+        }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <Subtitle>Daily nutrition</Subtitle>
-            <Title>Calories</Title>
+        {/* ===================================================
+            HEADER
+        =================================================== */}
+
+        <View
+          style={styles.header}
+        >
+          <View
+            style={styles.headerCopy}
+          >
+            <Subtitle>
+              Daily nutrition
+            </Subtitle>
+
+            <Title>
+              Calories
+            </Title>
+
+            <Text
+              style={[
+                styles.headerDescription,
+                {
+                  color:
+                    c.muted,
+                },
+              ]}
+            >
+              A clear view of your intake, macros,
+              and remaining daily budget.
+            </Text>
           </View>
 
           <View
             style={[
               styles.headerIcon,
-              { backgroundColor: c.primarySoft },
+              {
+                backgroundColor:
+                  `${ACCENT}14`,
+                borderColor:
+                  `${ACCENT}28`,
+              },
             ]}
           >
             <Ionicons
               name="flame"
-              size={22}
-              color={c.primary}
+              size={21}
+              color={ACCENT}
             />
           </View>
         </View>
 
-        {/* Main calorie card */}
+        {/* ===================================================
+            CALORIE HERO
+        =================================================== */}
+
         <Card
           style={[
-            styles.calorieCard,
+            styles.heroCard,
             {
-              borderColor: c.border,
+              backgroundColor:
+                c.surface,
+              borderColor:
+                c.border,
             },
           ]}
         >
-          <View style={styles.calorieTop}>
-            <View>
+          <View
+            style={
+              styles.heroTop
+            }
+          >
+            <View
+              style={
+                styles.heroCopy
+              }
+            >
+              <View
+                style={
+                  styles.statusPill
+                }
+              >
+                <View
+                  style={[
+                    styles.statusDot,
+                    {
+                      backgroundColor:
+                        ACCENT,
+                    },
+                  ]}
+                />
+
+                <Text
+                  style={[
+                    styles.statusPillText,
+                    {
+                      color:
+                        ACCENT,
+                    },
+                  ]}
+                >
+                  {calorieStatus}
+                </Text>
+              </View>
+
               <Text
                 style={[
                   styles.eyebrow,
-                  { color: c.muted },
+                  {
+                    color:
+                      c.muted,
+                  },
                 ]}
               >
                 CONSUMED TODAY
               </Text>
 
-              <View style={styles.calorieNumberRow}>
+              <View
+                style={
+                  styles.calorieRow
+                }
+              >
                 <Text
                   style={[
                     styles.calorieNumber,
-                    { color: c.text },
+                    {
+                      color:
+                        c.text,
+                    },
                   ]}
                 >
-                  {Math.round(consumed).toLocaleString()}
+                  {Math.round(
+                    consumed
+                  ).toLocaleString()}
                 </Text>
 
                 <Text
                   style={[
                     styles.calorieUnit,
-                    { color: c.muted },
+                    {
+                      color:
+                        c.muted,
+                    },
                   ]}
                 >
                   kcal
@@ -116,37 +282,59 @@ export default function CaloriesScreen() {
               <Text
                 style={[
                   styles.goalText,
-                  { color: c.muted },
+                  {
+                    color:
+                      c.muted,
+                  },
                 ]}
               >
                 Daily target{" "}
-                <Text style={{ color: c.text, fontWeight: "800" }}>
-                  {calorieGoal.toLocaleString()} kcal
-                </Text>
+                <Text
+                  style={{
+                    color:
+                      c.text,
+                    fontWeight:
+                      "900",
+                  }}
+                >
+                  {calorieGoal.toLocaleString()}
+                </Text>{" "}
+                kcal
               </Text>
             </View>
 
+            {/* Circular progress */}
+
             <View
               style={[
-                styles.percentCircle,
+                styles.progressCircle,
                 {
-                  borderColor: c.primary,
+                  backgroundColor:
+                    `${ACCENT}08`,
+                  borderColor:
+                    ACCENT,
                 },
               ]}
             >
               <Text
                 style={[
-                  styles.percent,
-                  { color: c.text },
+                  styles.progressCircleValue,
+                  {
+                    color:
+                      c.text,
+                  },
                 ]}
               >
-                {consumedPercent}%
+                {percentage}%
               </Text>
 
               <Text
                 style={[
-                  styles.percentLabel,
-                  { color: c.muted },
+                  styles.progressCircleLabel,
+                  {
+                    color:
+                      c.muted,
+                  },
                 ]}
               >
                 used
@@ -155,403 +343,835 @@ export default function CaloriesScreen() {
           </View>
 
           {/* Progress bar */}
+
           <View
             style={[
               styles.progressTrack,
-              { backgroundColor: c.surfaceAlt },
+              {
+                backgroundColor:
+                  c.surfaceAlt,
+              },
             ]}
           >
             <View
               style={[
                 styles.progressFill,
                 {
-                  backgroundColor: c.primary,
-                  width: `${consumedPercent}%`,
+                  width:
+                    `${percentage}%`,
+                  backgroundColor:
+                    ACCENT,
                 },
               ]}
             />
           </View>
 
-          {/* Calorie breakdown */}
-          <View style={styles.calorieStats}>
-            <View style={styles.calorieStat}>
-              <View
-                style={[
-                  styles.smallIcon,
-                  { backgroundColor: c.primarySoft },
-                ]}
-              >
-                <Ionicons
-                  name="restaurant-outline"
-                  size={16}
-                  color={c.primary}
-                />
-              </View>
+          <View
+            style={
+              styles.progressFooter
+            }
+          >
+            <Text
+              style={[
+                styles.progressLeft,
+                {
+                  color:
+                    c.muted,
+                },
+              ]}
+            >
+              {Math.round(
+                consumed
+              ).toLocaleString()}{" "}
+              consumed
+            </Text>
 
-              <View>
-                <Text
-                  style={[
-                    styles.statLabel,
-                    { color: c.muted },
-                  ]}
-                >
-                  Remaining
-                </Text>
+            <Text
+              style={[
+                styles.progressRight,
+                {
+                  color:
+                    ACCENT,
+                },
+              ]}
+            >
+              {percentage}%
+            </Text>
+          </View>
 
-                <Text
-                  style={[
-                    styles.statValue,
-                    { color: c.text },
-                  ]}
-                >
-                  {remaining.toLocaleString()} kcal
-                </Text>
-              </View>
-            </View>
+          {/* Summary */}
 
-            <View style={styles.calorieStat}>
-              <View
-                style={[
-                  styles.smallIcon,
-                  { backgroundColor: c.primarySoft },
-                ]}
-              >
-                <Ionicons
-                  name="flame-outline"
-                  size={16}
-                  color={c.primary}
-                />
-              </View>
+          <View
+            style={[
+              styles.summaryRow,
+              {
+                borderTopColor:
+                  c.border,
+              },
+            ]}
+          >
+            <SummaryItem
+              icon="restaurant-outline"
+              title="Remaining"
+              value={
+                remaining > 0
+                  ? `${remaining.toLocaleString()} kcal`
+                  : "Target reached"
+              }
+              c={c}
+            />
 
-              <View>
-                <Text
-                  style={[
-                    styles.statLabel,
-                    { color: c.muted },
-                  ]}
-                >
-                  Activity burn
-                </Text>
+            <View
+              style={[
+                styles.summaryDivider,
+                {
+                  backgroundColor:
+                    c.border,
+                },
+              ]}
+            />
 
-                <Text
-                  style={[
-                    styles.statValue,
-                    { color: c.text },
-                  ]}
-                >
-                  {today.caloriesBurned} kcal
-                </Text>
-              </View>
-            </View>
+            <SummaryItem
+              icon="flame-outline"
+              title="Activity burn"
+              value={`${today.caloriesBurned} kcal`}
+              c={c}
+            />
           </View>
         </Card>
 
-        {/* Macro section */}
-        <View style={styles.sectionHeader}>
-          <View>
-            <Text
-              style={[
-                styles.sectionTitle,
-                { color: c.text },
-              ]}
-            >
-              Macronutrients
-            </Text>
+        {/* ===================================================
+            QUICK SNAPSHOT
+        =================================================== */}
 
-            <Text
-              style={[
-                styles.sectionSubtitle,
-                { color: c.muted },
-              ]}
-            >
-              Your nutrition breakdown today
-            </Text>
-          </View>
+        <View
+          style={
+            styles.snapshotRow
+          }
+        >
+          <Snapshot
+            title="Consumed"
+            value={`${Math.round(
+              consumed
+            )}`}
+            unit="kcal"
+            icon="flame-outline"
+            c={c}
+          />
 
-          <Ionicons
-            name="pie-chart-outline"
-            size={20}
-            color={c.muted}
+          <Snapshot
+            title="Remaining"
+            value={`${Math.round(
+              remaining
+            )}`}
+            unit="kcal"
+            icon="restaurant-outline"
+            c={c}
+          />
+
+          <Snapshot
+            title="Burned"
+            value={`${today.caloriesBurned}`}
+            unit="kcal"
+            icon="walk-outline"
+            c={c}
           />
         </View>
 
-        <View style={styles.macros}>
-          <Macro
-            label="Protein"
-            value={protein}
-            icon="barbell-outline"
-            color={c.primary}
-          />
+        {/* ===================================================
+            MACROS
+        =================================================== */}
 
-          <Macro
-            label="Carbs"
-            value={carbs}
-            icon="leaf-outline"
-            color={c.accent}
-          />
-
-          <Macro
-            label="Fat"
-            value={fat}
-            icon="water-outline"
-            color={c.blue}
-          />
-        </View>
-
-        {/* Add food CTA */}
-        <Button
-          title="Add food"
-          onPress={() => router.push("/add-food")}
+        <SectionHeader
+          title="Macronutrients"
+          subtitle="Today's nutrition breakdown"
+          icon="pie-chart-outline"
         />
 
-        {/* Meals */}
-        <View style={styles.sectionHeader}>
-          <View>
-            <Text
-              style={[
-                styles.sectionTitle,
-                { color: c.text },
-              ]}
-            >
-              Today's meals
-            </Text>
+        <View
+          style={styles.macroRow}
+        >
+          <MacroCard
+            title="Protein"
+            value={protein}
+            icon="barbell-outline"
+            c={c}
+          />
 
-            <Text
-              style={[
-                styles.sectionSubtitle,
-                { color: c.muted },
-              ]}
-            >
-              {todayFoods.length === 0
-                ? "Nothing logged yet"
-                : `${todayFoods.length} ${
-                    todayFoods.length === 1 ? "meal" : "meals"
-                  } logged`}
-            </Text>
-          </View>
+          <MacroCard
+            title="Carbs"
+            value={carbs}
+            icon="leaf-outline"
+            c={c}
+          />
 
-          <Ionicons
-            name="restaurant-outline"
-            size={20}
-            color={c.muted}
+          <MacroCard
+            title="Fat"
+            value={fat}
+            icon="water-outline"
+            c={c}
           />
         </View>
 
-        {todayFoods.length === 0 ? (
-          <Card style={styles.emptyCard}>
-            <View
-              style={[
-                styles.emptyIcon,
-                { backgroundColor: c.primarySoft },
-              ]}
-            >
-              <Ionicons
-                name="restaurant-outline"
-                size={28}
-                color={c.primary}
-              />
-            </View>
+        {/* Total macros pill */}
 
+        <View
+          style={[
+            styles.totalMacroPill,
+            {
+              backgroundColor:
+                c.surface,
+              borderColor:
+                c.border,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.totalMacroIcon,
+              {
+                backgroundColor:
+                  `${ACCENT}12`,
+              },
+            ]}
+          >
+            <Ionicons
+              name="nutrition-outline"
+              size={16}
+              color={ACCENT}
+            />
+          </View>
+
+          <View
+            style={
+              styles.totalMacroText
+            }
+          >
             <Text
               style={[
-                styles.emptyTitle,
-                { color: c.text },
+                styles.totalMacroTitle,
+                {
+                  color:
+                    c.text,
+                },
               ]}
             >
-              No meals logged
+              Total macros
             </Text>
 
             <Text
               style={[
-                styles.emptyText,
-                { color: c.muted },
+                styles.totalMacroSubtitle,
+                {
+                  color:
+                    c.muted,
+                },
               ]}
             >
-              Start tracking your nutrition by adding
-              your first meal of the day.
+              {Math.round(
+                totalMacros
+              )}{" "}
+              g logged today
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.totalMacroArrow,
+              {
+                backgroundColor:
+                  `${ACCENT}0C`,
+              },
+            ]}
+          >
+            <Ionicons
+              name="chevron-forward"
+              size={15}
+              color={
+                c.muted
+              }
+            />
+          </View>
+        </View>
+
+        {/* ===================================================
+            ADD FOOD PRIMARY ACTION
+        =================================================== */}
+
+        <Pressable
+          onPress={() =>
+            router.push(
+              "/add-food"
+            )
+          }
+          style={({ pressed }) => [
+            styles.addFoodButton,
+            {
+              backgroundColor:
+                c.primary,
+              opacity:
+                pressed
+                  ? 0.8
+                  : 1,
+              transform: [
+                {
+                  scale:
+                    pressed
+                      ? 0.985
+                      : 1,
+                },
+              ],
+            },
+          ]}
+        >
+          <View
+            style={
+              styles.addFoodIcon
+            }
+          >
+            <Ionicons
+              name="add"
+              size={21}
+              color="#0A0F0C"
+            />
+          </View>
+
+          <View
+            style={
+              styles.addFoodCopy
+            }
+          >
+            <Text
+              style={
+                styles.addFoodTitle
+              }
+            >
+              Add food
             </Text>
 
-            <View style={styles.emptyButton}>
-              <Button
-                title="Log first meal"
-                onPress={() => router.push("/add-food")}
-              />
-            </View>
-          </Card>
+            <Text
+              style={
+                styles.addFoodSubtitle
+              }
+            >
+              Log a meal or snack
+            </Text>
+          </View>
+
+          <View
+            style={
+              styles.addFoodArrow
+            }
+          >
+            <Ionicons
+              name="arrow-forward"
+              size={18}
+              color="#0A0F0C"
+            />
+          </View>
+        </Pressable>
+
+        {/* ===================================================
+            TODAY'S MEALS
+        =================================================== */}
+
+        <SectionHeader
+          title="Today's meals"
+          subtitle={
+            todayFoods.length ===
+            0
+              ? "Nothing logged yet"
+              : `${todayFoods.length} ${
+                  todayFoods.length ===
+                  1
+                    ? "entry"
+                    : "entries"
+                } logged today`
+          }
+          icon="restaurant-outline"
+        />
+
+        {todayFoods.length ===
+        0 ? (
+          <EmptyMeals c={c} />
         ) : (
-          <View style={styles.foodList}>
-            {todayFoods.map((food) => {
-              const foodCalories = Math.round(
-                food.calories * food.servings
-              );
+          <View
+            style={
+              styles.foodList
+            }
+          >
+            {todayFoods.map(
+              (food) => {
+                const foodCalories =
+                  Math.round(
+                    food.calories *
+                      food.servings
+                  );
 
-              return (
-                <Card
-                  key={food.id}
-                  style={styles.foodCard}
-                >
-                  <View
-                    style={[
-                      styles.foodIcon,
-                      { backgroundColor: c.primarySoft },
-                    ]}
-                  >
-                    <Ionicons
-                      name="restaurant-outline"
-                      size={19}
-                      color={c.primary}
-                    />
-                  </View>
-
-                  <View style={styles.foodInfo}>
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.foodName,
-                        { color: c.text },
-                      ]}
-                    >
-                      {food.name}
-                    </Text>
-
-                    <Text
-                      style={[
-                        styles.foodMeta,
-                        { color: c.muted },
-                      ]}
-                    >
-                      {food.meal} • {food.servings}{" "}
-                      {food.servings === 1
-                        ? "serving"
-                        : "servings"}
-                    </Text>
-                  </View>
-
-                  <View style={styles.foodCalories}>
-                    <Text
-                      style={[
-                        styles.foodCaloriesValue,
-                        { color: c.text },
-                      ]}
-                    >
-                      {foodCalories}
-                    </Text>
-
-                    <Text
-                      style={[
-                        styles.foodCaloriesUnit,
-                        { color: c.muted },
-                      ]}
-                    >
-                      kcal
-                    </Text>
-                  </View>
-                </Card>
-              );
-            })}
+                return (
+                  <FoodItem
+                    key={food.id}
+                    name={
+                      food.name
+                    }
+                    meal={
+                      food.meal
+                    }
+                    servings={
+                      food.servings
+                    }
+                    calories={
+                      foodCalories
+                    }
+                    c={c}
+                  />
+                );
+              }
+            )}
           </View>
         )}
 
-        {/* Daily insight */}
-        <Card style={styles.insightCard}>
-          <View style={styles.insightHeader}>
+        {/* ===================================================
+            DAILY INSIGHT
+        =================================================== */}
+
+        <SectionHeader
+          title="Daily insight"
+          subtitle="Based on your current food log"
+          icon="sparkles-outline"
+        />
+
+        <View
+          style={[
+            styles.insightPill,
+            {
+              backgroundColor:
+                c.surface,
+              borderColor:
+                `${ACCENT}30`,
+            },
+          ]}
+        >
+          <View
+            style={
+              styles.insightCircle
+            }
+          >
+            <Ionicons
+              name="bulb-outline"
+              size={18}
+              color="#0A0F0C"
+            />
+          </View>
+
+          <View
+            style={
+              styles.insightCopy
+            }
+          >
             <View
-              style={[
-                styles.insightIcon,
-                { backgroundColor: c.primarySoft },
-              ]}
+              style={
+                styles.insightTop
+              }
             >
-              <Ionicons
-                name="bulb-outline"
-                size={19}
-                color={c.primary}
-              />
+              <Text
+                style={[
+                  styles.insightEyebrow,
+                  {
+                    color:
+                      ACCENT,
+                  },
+                ]}
+              >
+                FITPULSE INSIGHT
+              </Text>
+
+              <View
+                style={[
+                  styles.insightBadge,
+                  {
+                    backgroundColor:
+                      `${ACCENT}10`,
+                  },
+                ]}
+              >
+                <View
+                  style={
+                    styles.insightBadgeDot
+                  }
+                />
+
+                <Text
+                  style={[
+                    styles.insightBadgeText,
+                    {
+                      color:
+                        ACCENT,
+                    },
+                  ]}
+                >
+                  LIVE
+                </Text>
+              </View>
             </View>
 
             <Text
               style={[
                 styles.insightTitle,
-                { color: c.text },
+                {
+                  color:
+                    c.text,
+                },
               ]}
             >
-              Daily insight
+              {insightTitle}
+            </Text>
+
+            <Text
+              style={[
+                styles.insightText,
+                {
+                  color:
+                    c.muted,
+                },
+              ]}
+            >
+              {insightText}
             </Text>
           </View>
+        </View>
 
-          <Text
-            style={[
-              styles.insightText,
-              { color: c.muted },
-            ]}
-          >
-            {consumed === 0
-              ? "Log your meals throughout the day to get a clearer picture of your nutrition."
-              : consumed < calorieGoal * 0.5
-              ? "You're still early in your calorie target. Keep logging meals so your daily picture stays accurate."
-              : consumed <= calorieGoal
-              ? "You're within your calorie target. Keep your meals balanced and stay consistent."
-              : "You've reached your calorie target for today. Focus on hydration and balanced choices."}
-          </Text>
-        </Card>
-
-        {/* Bottom spacing */}
-        <View style={styles.footerSpace} />
+        <View
+          style={
+            styles.bottomSpace
+          }
+        />
       </ScrollView>
     </Screen>
   );
 }
 
-function Macro({
-  label,
-  value,
+/* ============================================================
+   SECTION HEADER
+============================================================ */
+
+function SectionHeader({
+  title,
+  subtitle,
   icon,
-  color,
 }: {
-  label: string;
-  value: number;
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
+  title: string;
+  subtitle: string;
+  icon: IconName;
 }) {
   const c = useAppColors();
 
   return (
-    <Card style={styles.macro}>
+    <View
+      style={
+        styles.sectionHeader
+      }
+    >
+      <View
+        style={
+          styles.sectionText
+        }
+      >
+        <Text
+          style={[
+            styles.sectionTitle,
+            {
+              color:
+                c.text,
+            },
+          ]}
+        >
+          {title}
+        </Text>
+
+        <Text
+          style={[
+            styles.sectionSubtitle,
+            {
+              color:
+                c.muted,
+            },
+          ]}
+        >
+          {subtitle}
+        </Text>
+      </View>
+
       <View
         style={[
-          styles.macroIcon,
-          { backgroundColor: `${color}22` },
+          styles.sectionIcon,
+          {
+            backgroundColor:
+              `${ACCENT}12`,
+            borderColor:
+              `${ACCENT}25`,
+          },
         ]}
       >
         <Ionicons
           name={icon}
-          size={17}
-          color={color}
+          size={16}
+          color={ACCENT}
+        />
+      </View>
+    </View>
+  );
+}
+
+/* ============================================================
+   SUMMARY ITEM
+============================================================ */
+
+function SummaryItem({
+  icon,
+  title,
+  value,
+  c,
+}: {
+  icon: IconName;
+  title: string;
+  value: string;
+  c: ReturnType<
+    typeof useAppColors
+  >;
+}) {
+  return (
+    <View
+      style={
+        styles.summaryItem
+      }
+    >
+      <View
+        style={[
+          styles.summaryIcon,
+          {
+            backgroundColor:
+              `${ACCENT}12`,
+          },
+        ]}
+      >
+        <Ionicons
+          name={icon}
+          size={14}
+          color={ACCENT}
+        />
+      </View>
+
+      <View
+        style={
+          styles.summaryCopy
+        }
+      >
+        <Text
+          style={[
+            styles.summaryLabel,
+            {
+              color:
+                c.muted,
+            },
+          ]}
+        >
+          {title}
+        </Text>
+
+        <Text
+          style={[
+            styles.summaryValue,
+            {
+              color:
+                c.text,
+            },
+          ]}
+        >
+          {value}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+/* ============================================================
+   SNAPSHOT
+============================================================ */
+
+function Snapshot({
+  title,
+  value,
+  unit,
+  icon,
+  c,
+}: {
+  title: string;
+  value: string;
+  unit: string;
+  icon: IconName;
+  c: ReturnType<
+    typeof useAppColors
+  >;
+}) {
+  return (
+    <View
+      style={[
+        styles.snapshotCard,
+        {
+          backgroundColor:
+            c.surface,
+          borderColor:
+            c.border,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.snapshotIcon,
+          {
+            backgroundColor:
+              `${ACCENT}10`,
+          },
+        ]}
+      >
+        <Ionicons
+          name={icon}
+          size={14}
+          color={ACCENT}
+        />
+      </View>
+
+      <Text
+        style={[
+          styles.snapshotTitle,
+          {
+            color:
+              c.muted,
+          },
+        ]}
+      >
+        {title}
+      </Text>
+
+      <View
+        style={
+          styles.snapshotValueRow
+        }
+      >
+        <Text
+          style={[
+            styles.snapshotValue,
+            {
+              color:
+                c.text,
+            },
+          ]}
+        >
+          {value}
+        </Text>
+
+        <Text
+          style={[
+            styles.snapshotUnit,
+            {
+              color:
+                c.muted,
+            },
+          ]}
+        >
+          {unit}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+/* ============================================================
+   MACRO CARD
+============================================================ */
+
+function MacroCard({
+  title,
+  value,
+  icon,
+  c,
+}: {
+  title: string;
+  value: number;
+  icon: IconName;
+  c: ReturnType<
+    typeof useAppColors
+  >;
+}) {
+  return (
+    <Card
+      style={[
+        styles.macroCard,
+        {
+          backgroundColor:
+            c.surface,
+          borderColor:
+            c.border,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.macroIcon,
+          {
+            backgroundColor:
+              `${ACCENT}12`,
+            borderColor:
+              `${ACCENT}22`,
+          },
+        ]}
+      >
+        <Ionicons
+          name={icon}
+          size={16}
+          color={ACCENT}
         />
       </View>
 
       <Text
         style={[
           styles.macroLabel,
-          { color: c.muted },
+          {
+            color:
+              c.muted,
+          },
         ]}
       >
-        {label}
+        {title}
       </Text>
 
-      <View style={styles.macroValueRow}>
+      <View
+        style={
+          styles.macroValueRow
+        }
+      >
         <Text
           style={[
             styles.macroValue,
-            { color: c.text },
+            {
+              color:
+                c.text,
+            },
           ]}
         >
-          {Math.round(value)}
+          {Math.round(
+            value
+          )}
         </Text>
 
         <Text
           style={[
             styles.macroUnit,
-            { color: c.muted },
+            {
+              color:
+                c.muted,
+            },
           ]}
         >
           g
@@ -561,309 +1181,1011 @@ function Macro({
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    padding: 16,
-    paddingBottom: 120,
-  },
+/* ============================================================
+   FOOD ITEM
+============================================================ */
 
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 18,
-  },
+function FoodItem({
+  name,
+  meal,
+  servings,
+  calories,
+  c,
+}: {
+  name: string;
+  meal: string;
+  servings: number;
+  calories: number;
+  c: ReturnType<
+    typeof useAppColors
+  >;
+}) {
+  return (
+    <View
+      style={[
+        styles.foodItem,
+        {
+          backgroundColor:
+            c.surface,
+          borderColor:
+            c.border,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.foodCircle,
+          {
+            backgroundColor:
+              `${ACCENT}12`,
+            borderColor:
+              `${ACCENT}22`,
+          },
+        ]}
+      >
+        <Ionicons
+          name="restaurant-outline"
+          size={17}
+          color={ACCENT}
+        />
+      </View>
 
-  headerText: {
-    flex: 1,
-  },
+      <View
+        style={
+          styles.foodInfo
+        }
+      >
+        <Text
+          numberOfLines={1}
+          style={[
+            styles.foodName,
+            {
+              color:
+                c.text,
+            },
+          ]}
+        >
+          {name}
+        </Text>
 
-  headerIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 15,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+        <Text
+          style={[
+            styles.foodMeta,
+            {
+              color:
+                c.muted,
+            },
+          ]}
+        >
+          {formatMeal(
+            meal
+          )}{" "}
+          ·{" "}
+          {servings}{" "}
+          {servings === 1
+            ? "serving"
+            : "servings"}
+        </Text>
+      </View>
 
-  calorieCard: {
-    padding: 20,
-    marginBottom: 24,
-  },
+      <View
+        style={
+          styles.foodCalories
+        }
+      >
+        <Text
+          style={[
+            styles.foodCaloriesValue,
+            {
+              color:
+                c.text,
+            },
+          ]}
+        >
+          {calories}
+        </Text>
 
-  calorieTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
+        <Text
+          style={[
+            styles.foodCaloriesUnit,
+            {
+              color:
+                c.muted,
+            },
+          ]}
+        >
+          kcal
+        </Text>
+      </View>
+    </View>
+  );
+}
 
-  eyebrow: {
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1,
-  },
+/* ============================================================
+   EMPTY MEALS
+============================================================ */
 
-  calorieNumberRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    marginTop: 5,
-  },
+function EmptyMeals({
+  c,
+}: {
+  c: ReturnType<
+    typeof useAppColors
+  >;
+}) {
+  return (
+    <View
+      style={[
+        styles.emptyCard,
+        {
+          backgroundColor:
+            c.surface,
+          borderColor:
+            c.border,
+        },
+      ]}
+    >
+      <View
+        style={
+          styles.emptyCircle
+        }
+      >
+        <Ionicons
+          name="restaurant-outline"
+          size={25}
+          color={ACCENT}
+        />
+      </View>
 
-  calorieNumber: {
-    fontSize: 42,
-    fontWeight: "900",
-    letterSpacing: -1,
-  },
+      <Text
+        style={[
+          styles.emptyTitle,
+          {
+            color:
+              c.text,
+          },
+        ]}
+      >
+        No meals logged
+      </Text>
 
-  calorieUnit: {
-    fontSize: 14,
-    fontWeight: "700",
-    marginLeft: 6,
-    marginBottom: 8,
-  },
+      <Text
+        style={[
+          styles.emptyText,
+          {
+            color:
+              c.muted,
+          },
+        ]}
+      >
+        Add your first meal to start tracking
+        today's nutrition.
+      </Text>
 
-  goalText: {
-    fontSize: 12,
-    marginTop: 3,
-  },
+      <Pressable
+        onPress={() =>
+          router.push(
+            "/add-food"
+          )
+        }
+        style={({ pressed }) => [
+          styles.emptyButton,
+          {
+            backgroundColor:
+              c.primarySoft,
+            borderColor:
+              `${c.primary}40`,
+            opacity:
+              pressed
+                ? 0.72
+                : 1,
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.emptyButtonText,
+            {
+              color:
+                c.primary,
+            },
+          ]}
+        >
+          Log first meal
+        </Text>
 
-  percentCircle: {
-    width: 74,
-    height: 74,
-    borderRadius: 37,
-    borderWidth: 4,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+        <View
+          style={
+            styles.emptyButtonCircle
+          }
+        >
+          <Ionicons
+            name="arrow-forward"
+            size={13}
+            color={
+              c.primary
+            }
+          />
+        </View>
+      </Pressable>
+    </View>
+  );
+}
 
-  percent: {
-    fontSize: 17,
-    fontWeight: "900",
-  },
+/* ============================================================
+   HELPERS
+============================================================ */
 
-  percentLabel: {
-    fontSize: 10,
-    marginTop: 1,
-  },
+function formatMeal(
+  meal: string
+) {
+  return meal
+    .charAt(0)
+    .toUpperCase() +
+    meal.slice(1);
+}
 
-  progressTrack: {
-    height: 8,
-    borderRadius: 999,
-    overflow: "hidden",
-    marginTop: 22,
-  },
+/* ============================================================
+   STYLES
+============================================================ */
 
-  progressFill: {
-    height: "100%",
-    borderRadius: 999,
-  },
+const styles =
+  StyleSheet.create({
+    content: {
+      paddingHorizontal: 16,
+      paddingTop: 14,
+      paddingBottom: 150,
+    },
 
-  calorieStats: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 18,
-  },
+    /* Header */
 
-  calorieStat: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 9,
-  },
+    header: {
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      justifyContent:
+        "space-between",
+      marginBottom: 20,
+    },
 
-  smallIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 11,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+    headerCopy: {
+      flex: 1,
+      paddingRight: 12,
+    },
 
-  statLabel: {
-    fontSize: 10,
-    fontWeight: "600",
-  },
+    headerDescription: {
+      fontSize: 11,
+      lineHeight: 17,
+      marginTop: 4,
+    },
 
-  statValue: {
-    fontSize: 13,
-    fontWeight: "800",
-    marginTop: 2,
-  },
+    headerIcon: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      borderWidth: 1,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
 
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
+    /* Hero */
 
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-  },
+    heroCard: {
+      borderRadius: 26,
+      borderWidth: 1,
+      padding: 19,
+      marginBottom: 17,
+    },
 
-  sectionSubtitle: {
-    fontSize: 12,
-    marginTop: 3,
-  },
+    heroTop: {
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      justifyContent:
+        "space-between",
+    },
 
-  macros: {
-    flexDirection: "row",
-    gap: 9,
-    marginBottom: 18,
-  },
+    heroCopy: {
+      flex: 1,
+      paddingRight: 10,
+    },
 
-  macro: {
-    flex: 1,
-    padding: 13,
-    marginBottom: 0,
-  },
+    statusPill: {
+      alignSelf:
+        "flex-start",
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      borderRadius: 999,
+      backgroundColor:
+        `${ACCENT}0D`,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      marginBottom: 10,
+    },
 
-  macroIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 10,
-  },
+    statusDot: {
+      width: 5,
+      height: 5,
+      borderRadius: 3,
+      marginRight: 5,
+    },
 
-  macroLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-  },
+    statusPillText: {
+      fontSize: 7,
+      fontWeight:
+        "900",
+      letterSpacing:
+        0.7,
+    },
 
-  macroValueRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    marginTop: 2,
-  },
+    eyebrow: {
+      fontSize: 9,
+      fontWeight:
+        "900",
+      letterSpacing:
+        1.2,
+    },
 
-  macroValue: {
-    fontSize: 20,
-    fontWeight: "900",
-  },
+    calorieRow: {
+      flexDirection:
+        "row",
+      alignItems:
+        "baseline",
+      marginTop: 3,
+    },
 
-  macroUnit: {
-    fontSize: 11,
-    fontWeight: "700",
-    marginLeft: 3,
-    marginBottom: 3,
-  },
+    calorieNumber: {
+      fontSize: 42,
+      fontWeight:
+        "900",
+      letterSpacing:
+        -1.3,
+    },
 
-  foodList: {
-    gap: 10,
-  },
+    calorieUnit: {
+      fontSize: 13,
+      fontWeight:
+        "700",
+      marginLeft: 6,
+    },
 
-  foodCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 14,
-    marginBottom: 0,
-  },
+    goalText: {
+      fontSize: 10,
+      marginTop: 4,
+    },
 
-  foodIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
+    progressCircle: {
+      width: 80,
+      height: 80,
+      borderRadius:
+        40,
+      borderWidth: 4,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
 
-  foodInfo: {
-    flex: 1,
-    minWidth: 0,
-  },
+    progressCircleValue: {
+      fontSize: 17,
+      fontWeight:
+        "900",
+    },
 
-  foodName: {
-    fontSize: 14,
-    fontWeight: "800",
-  },
+    progressCircleLabel: {
+      fontSize: 8,
+      marginTop: 1,
+    },
 
-  foodMeta: {
-    fontSize: 11,
-    marginTop: 4,
-  },
+    progressTrack: {
+      height: 8,
+      borderRadius:
+        999,
+      overflow:
+        "hidden",
+      marginTop: 21,
+    },
 
-  foodCalories: {
-    alignItems: "flex-end",
-    marginLeft: 10,
-  },
+    progressFill: {
+      height: "100%",
+      borderRadius:
+        999,
+    },
 
-  foodCaloriesValue: {
-    fontSize: 16,
-    fontWeight: "900",
-  },
+    progressFooter: {
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      justifyContent:
+        "space-between",
+      marginTop: 8,
+    },
 
-  foodCaloriesUnit: {
-    fontSize: 10,
-    marginTop: 1,
-  },
+    progressLeft: {
+      fontSize: 9,
+      fontWeight:
+        "600",
+    },
 
-  emptyCard: {
-    alignItems: "center",
-    padding: 24,
-  },
+    progressRight: {
+      fontSize: 9,
+      fontWeight:
+        "900",
+    },
 
-  emptyIcon: {
-    width: 58,
-    height: 58,
-    borderRadius: 19,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
+    summaryRow: {
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      borderTopWidth: 1,
+      marginTop: 16,
+      paddingTop: 14,
+    },
 
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: "900",
-  },
+    summaryItem: {
+      flex: 1,
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+    },
 
-  emptyText: {
-    fontSize: 13,
-    lineHeight: 20,
-    textAlign: "center",
-    marginTop: 6,
-    maxWidth: 290,
-  },
+    summaryIcon: {
+      width: 32,
+      height: 32,
+      borderRadius:
+        16,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
 
-  emptyButton: {
-    width: "100%",
-    marginTop: 16,
-  },
+    summaryCopy: {
+      flex: 1,
+      marginLeft: 8,
+    },
 
-  insightCard: {
-    marginTop: 24,
-    padding: 18,
-  },
+    summaryLabel: {
+      fontSize: 8,
+      fontWeight:
+        "600",
+    },
 
-  insightHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
+    summaryValue: {
+      fontSize: 11,
+      fontWeight:
+        "900",
+      marginTop: 2,
+    },
 
-  insightIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+    summaryDivider: {
+      width: 1,
+      height: 30,
+      marginHorizontal: 8,
+    },
 
-  insightTitle: {
-    fontSize: 15,
-    fontWeight: "900",
-  },
+    /* Snapshot */
 
-  insightText: {
-    fontSize: 13,
-    lineHeight: 21,
-    marginTop: 12,
-  },
+    snapshotRow: {
+      flexDirection:
+        "row",
+      gap: 8,
+      marginBottom: 25,
+    },
 
-  footerSpace: {
-    height: 20,
-  },
-});
+    snapshotCard: {
+      flex: 1,
+      minHeight: 94,
+      borderRadius:
+        20,
+      borderWidth: 1,
+      padding: 11,
+    },
+
+    snapshotIcon: {
+      width: 30,
+      height: 30,
+      borderRadius:
+        15,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
+
+    snapshotTitle: {
+      fontSize: 8,
+      fontWeight:
+        "700",
+      marginTop: 7,
+    },
+
+    snapshotValueRow: {
+      flexDirection:
+        "row",
+      alignItems:
+        "baseline",
+      marginTop: 2,
+    },
+
+    snapshotValue: {
+      fontSize: 17,
+      fontWeight:
+        "900",
+    },
+
+    snapshotUnit: {
+      fontSize: 7,
+      fontWeight:
+        "700",
+      marginLeft: 2,
+    },
+
+    /* Sections */
+
+    sectionHeader: {
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      justifyContent:
+        "space-between",
+      marginBottom: 10,
+    },
+
+    sectionText: {
+      flex: 1,
+    },
+
+    sectionTitle: {
+      fontSize: 17,
+      fontWeight:
+        "900",
+      letterSpacing:
+        -0.2,
+    },
+
+    sectionSubtitle: {
+      fontSize: 10,
+      lineHeight: 15,
+      marginTop: 3,
+    },
+
+    sectionIcon: {
+      width: 36,
+      height: 36,
+      borderRadius:
+        18,
+      borderWidth: 1,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
+
+    /* Macros */
+
+    macroRow: {
+      flexDirection:
+        "row",
+      gap: 8,
+      marginBottom: 9,
+    },
+
+    macroCard: {
+      flex: 1,
+      minHeight: 100,
+      borderRadius:
+        20,
+      padding: 12,
+    },
+
+    macroIcon: {
+      width: 34,
+      height: 34,
+      borderRadius:
+        17,
+      borderWidth: 1,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
+
+    macroLabel: {
+      fontSize: 9,
+      fontWeight:
+        "700",
+      marginTop: 8,
+    },
+
+    macroValueRow: {
+      flexDirection:
+        "row",
+      alignItems:
+        "baseline",
+      marginTop: 2,
+    },
+
+    macroValue: {
+      fontSize: 19,
+      fontWeight:
+        "900",
+    },
+
+    macroUnit: {
+      fontSize: 8,
+      fontWeight:
+        "700",
+      marginLeft: 3,
+    },
+
+    /* Total */
+
+    totalMacroPill: {
+      minHeight: 58,
+      borderRadius:
+        999,
+      borderWidth: 1,
+      paddingHorizontal: 9,
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      marginBottom: 16,
+    },
+
+    totalMacroIcon: {
+      width: 38,
+      height: 38,
+      borderRadius:
+        19,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
+
+    totalMacroText: {
+      flex: 1,
+      marginLeft: 9,
+    },
+
+    totalMacroTitle: {
+      fontSize: 11,
+      fontWeight:
+        "900",
+    },
+
+    totalMacroSubtitle: {
+      fontSize: 8,
+      marginTop: 2,
+    },
+
+    totalMacroArrow: {
+      width: 30,
+      height: 30,
+      borderRadius:
+        15,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
+
+    /* Add food */
+
+    addFoodButton: {
+      minHeight: 66,
+      borderRadius:
+        999,
+      paddingHorizontal: 9,
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      marginBottom: 25,
+    },
+
+    addFoodIcon: {
+      width: 46,
+      height: 46,
+      borderRadius:
+        23,
+      backgroundColor:
+        "rgba(10,15,12,0.12)",
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
+
+    addFoodCopy: {
+      flex: 1,
+      marginLeft: 10,
+    },
+
+    addFoodTitle: {
+      color:
+        "#0A0F0C",
+      fontSize: 14,
+      fontWeight:
+        "900",
+    },
+
+    addFoodSubtitle: {
+      color:
+        "rgba(10,15,12,0.58)",
+      fontSize: 9,
+      marginTop: 2,
+      fontWeight:
+        "600",
+    },
+
+    addFoodArrow: {
+      width: 35,
+      height: 35,
+      borderRadius:
+        18,
+      backgroundColor:
+        "rgba(10,15,12,0.12)",
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
+
+    /* Food list */
+
+    foodList: {
+      gap: 8,
+      marginBottom: 1,
+    },
+
+    foodItem: {
+      minHeight: 66,
+      borderRadius:
+        999,
+      borderWidth: 1,
+      paddingHorizontal: 8,
+      paddingVertical: 7,
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      marginBottom: 0,
+    },
+
+    foodCircle: {
+      width: 46,
+      height: 46,
+      borderRadius:
+        23,
+      borderWidth: 1,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
+
+    foodInfo: {
+      flex: 1,
+      minWidth: 0,
+      marginLeft: 9,
+    },
+
+    foodName: {
+      fontSize: 12,
+      fontWeight:
+        "800",
+    },
+
+    foodMeta: {
+      fontSize: 8,
+      marginTop: 3,
+    },
+
+    foodCalories: {
+      alignItems:
+        "flex-end",
+      marginLeft: 8,
+      marginRight: 4,
+    },
+
+    foodCaloriesValue: {
+      fontSize: 15,
+      fontWeight:
+        "900",
+    },
+
+    foodCaloriesUnit: {
+      fontSize: 8,
+      marginTop: 1,
+    },
+
+    /* Empty */
+
+    emptyCard: {
+      borderRadius:
+        22,
+      borderWidth: 1,
+      alignItems:
+        "center",
+      padding: 24,
+      marginBottom: 2,
+    },
+
+    emptyCircle: {
+      width: 56,
+      height: 56,
+      borderRadius:
+        28,
+      backgroundColor:
+        `${ACCENT}12`,
+      borderWidth: 1,
+      borderColor:
+        `${ACCENT}25`,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+      marginBottom: 11,
+    },
+
+    emptyTitle: {
+      fontSize: 15,
+      fontWeight:
+        "900",
+    },
+
+    emptyText: {
+      maxWidth: 280,
+      textAlign:
+        "center",
+      fontSize: 10,
+      lineHeight: 17,
+      marginTop: 5,
+    },
+
+    emptyButton: {
+      width: "100%",
+      minHeight: 45,
+      borderRadius:
+        999,
+      borderWidth: 1,
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+      marginTop: 14,
+      gap: 8,
+    },
+
+    emptyButtonText: {
+      fontSize: 10,
+      fontWeight:
+        "900",
+    },
+
+    emptyButtonCircle: {
+      width: 28,
+      height: 28,
+      borderRadius:
+        14,
+      backgroundColor:
+        `${ACCENT}12`,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
+
+    /* Insight */
+
+    insightPill: {
+      minHeight: 82,
+      borderRadius:
+        999,
+      borderWidth: 1,
+      paddingHorizontal: 8,
+      paddingVertical: 8,
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+    },
+
+    insightCircle: {
+      width: 52,
+      height: 52,
+      borderRadius:
+        26,
+      backgroundColor:
+        ACCENT,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+      flexShrink: 0,
+    },
+
+    insightCopy: {
+      flex: 1,
+      marginLeft: 10,
+      minWidth: 0,
+    },
+
+    insightTop: {
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      justifyContent:
+        "space-between",
+      marginBottom: 2,
+    },
+
+    insightEyebrow: {
+      fontSize: 7,
+      fontWeight:
+        "900",
+      letterSpacing:
+        0.9,
+    },
+
+    insightBadge: {
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      borderRadius:
+        999,
+      paddingHorizontal: 7,
+      paddingVertical: 3,
+      marginLeft: 6,
+    },
+
+    insightBadgeDot: {
+      width: 4,
+      height: 4,
+      borderRadius:
+        2,
+      backgroundColor:
+        ACCENT,
+      marginRight: 4,
+    },
+
+    insightBadgeText: {
+      fontSize: 6,
+      fontWeight:
+        "900",
+      letterSpacing:
+        0.6,
+    },
+
+    insightTitle: {
+      fontSize: 13,
+      fontWeight:
+        "900",
+    },
+
+    insightText: {
+      fontSize: 9,
+      lineHeight: 15,
+      marginTop: 3,
+    },
+
+    bottomSpace: {
+      height: 20,
+    },
+  });

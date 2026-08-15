@@ -9,22 +9,34 @@ import {
   ViewProps,
   ViewStyle,
   StyleProp,
+  useColorScheme,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { colors, radius, spacing } from "@/constants/theme";
-import { useColorScheme } from "react-native";
+import {
+  SafeAreaView,
+} from "react-native-safe-area-context";
+
+import {
+  colors,
+  radius,
+  spacing,
+} from "@/constants/theme";
+
+/* =========================================================
+   GLOBAL COLORS
+========================================================= */
 
 export function useAppColors() {
   const scheme = useColorScheme();
-  return scheme === "dark" ? colors.dark : colors.light;
+
+  return scheme === "dark"
+    ? colors.dark
+    : colors.light;
 }
 
-/**
- * Global screen container.
- *
- * Safe-area handling is centralized here so individual screens
- * don't need to manually calculate top/bottom phone insets.
- */
+/* =========================================================
+   GLOBAL SCREEN
+========================================================= */
+
 export function Screen({
   children,
   style,
@@ -40,7 +52,8 @@ export function Screen({
       style={[
         styles.screen,
         {
-          backgroundColor: c.background,
+          backgroundColor:
+            c.background,
         },
         style,
       ]}
@@ -50,6 +63,10 @@ export function Screen({
     </SafeAreaView>
   );
 }
+
+/* =========================================================
+   GLOBAL CARD
+========================================================= */
 
 export function Card({
   children,
@@ -63,8 +80,10 @@ export function Card({
       style={[
         styles.card,
         {
-          backgroundColor: c.surface,
-          borderColor: c.border,
+          backgroundColor:
+            c.surface,
+          borderColor:
+            c.border,
         },
         props.style,
       ]}
@@ -73,6 +92,10 @@ export function Card({
     </View>
   );
 }
+
+/* =========================================================
+   TITLE
+========================================================= */
 
 export function Title({
   children,
@@ -95,6 +118,10 @@ export function Title({
   );
 }
 
+/* =========================================================
+   SUBTITLE
+========================================================= */
+
 export function Subtitle({
   children,
 }: {
@@ -115,6 +142,10 @@ export function Subtitle({
     </Text>
   );
 }
+
+/* =========================================================
+   LABEL
+========================================================= */
 
 export function Label({
   children,
@@ -137,6 +168,10 @@ export function Label({
   );
 }
 
+/* =========================================================
+   GLOBAL BUTTON
+========================================================= */
+
 export function Button({
   title,
   onPress,
@@ -145,36 +180,63 @@ export function Button({
 }: {
   title: string;
   onPress: () => void;
-  variant?: "primary" | "secondary" | "danger";
+  variant?:
+    | "primary"
+    | "secondary"
+    | "danger";
   disabled?: boolean;
 }) {
   const c = useAppColors();
 
-  const bg =
-    variant === "primary"
-      ? c.primary
-      : variant === "danger"
-        ? c.danger
+  const isPrimary =
+    variant === "primary";
+
+  const isDanger =
+    variant === "danger";
+
+  const backgroundColor =
+    isDanger
+      ? `${c.danger}16`
+      : isPrimary
+        ? c.primarySoft
         : c.surfaceAlt;
 
-  const fg =
-    variant === "secondary"
-      ? c.text
-      : c.white;
+  const borderColor =
+    isDanger
+      ? `${c.danger}40`
+      : isPrimary
+        ? `${c.primary}45`
+        : c.border;
+
+  const textColor =
+    isDanger
+      ? c.danger
+      : isPrimary
+        ? c.primary
+        : c.text;
 
   return (
     <Pressable
       disabled={disabled}
       onPress={onPress}
+      accessibilityRole="button"
       style={({ pressed }) => [
         styles.button,
         {
-          backgroundColor: bg,
+          backgroundColor,
+          borderColor,
           opacity: disabled
             ? 0.45
             : pressed
-              ? 0.75
+              ? 0.72
               : 1,
+          transform: [
+            {
+              scale: pressed
+                ? 0.985
+                : 1,
+            },
+          ],
         },
       ]}
     >
@@ -182,7 +244,7 @@ export function Button({
         style={[
           styles.buttonText,
           {
-            color: fg,
+            color: textColor,
           },
         ]}
       >
@@ -192,19 +254,31 @@ export function Button({
   );
 }
 
-export function Input(props: TextInputProps) {
+/* =========================================================
+   INPUT
+========================================================= */
+
+export function Input(
+  props: TextInputProps
+) {
   const c = useAppColors();
 
   return (
     <TextInput
       {...props}
-      placeholderTextColor={c.muted}
+      placeholderTextColor={
+        c.muted
+      }
+      selectionColor={
+        c.primary
+      }
       style={[
         styles.input,
         {
           color: c.text,
           borderColor: c.border,
-          backgroundColor: c.surface,
+          backgroundColor:
+            c.surface,
         },
         props.style,
       ]}
@@ -212,64 +286,128 @@ export function Input(props: TextInputProps) {
   );
 }
 
-export const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
+/* =========================================================
+   GLOBAL STYLES
+========================================================= */
 
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
+export const styles =
+  StyleSheet.create({
+    /* -----------------------------------------------------
+       Screen
+    ----------------------------------------------------- */
 
-    // Extra room for the tab bar.
-    // SafeAreaView handles the actual phone navigation area.
-    paddingBottom: 140,
-  },
+    screen: {
+      flex: 1,
+    },
 
-  title: {
-    fontSize: 28,
-    fontWeight: "800",
-    letterSpacing: -0.5,
-  },
+    /* -----------------------------------------------------
+       Shared content
+    ----------------------------------------------------- */
 
-  subtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
+    content: {
+      paddingHorizontal:
+        spacing.lg,
 
-  label: {
-    fontSize: 12,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: 7,
-  },
+      paddingTop:
+        spacing.md,
 
-  card: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-  },
+      /*
+       * Extra room for the custom
+       * floating navigation bar.
+       *
+       * SafeAreaView handles the
+       * physical device inset.
+       */
+      paddingBottom: 140,
+    },
 
-  button: {
-    minHeight: 48,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+    /* -----------------------------------------------------
+       Typography
+    ----------------------------------------------------- */
 
-  buttonText: {
-    fontSize: 15,
-    fontWeight: "800",
-  },
+    title: {
+      fontSize: 28,
+      lineHeight: 34,
+      fontWeight: "900",
+      letterSpacing: -0.7,
+    },
 
-  input: {
-    minHeight: 48,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    fontSize: 16,
-  },
-});
+    subtitle: {
+      fontSize: 12,
+      lineHeight: 18,
+      fontWeight: "600",
+      letterSpacing: 0.2,
+    },
+
+    label: {
+      fontSize: 10,
+      lineHeight: 15,
+      fontWeight: "800",
+      textTransform:
+        "uppercase",
+      letterSpacing: 0.9,
+      marginBottom: 7,
+    },
+
+    /* -----------------------------------------------------
+       Cards
+    ----------------------------------------------------- */
+
+    card: {
+      borderRadius:
+        radius.xl,
+
+      borderWidth: 1,
+
+      padding:
+        spacing.lg,
+
+      marginBottom:
+        spacing.md,
+    },
+
+    /* -----------------------------------------------------
+       Buttons
+    ----------------------------------------------------- */
+
+    button: {
+      minHeight: 48,
+
+      paddingHorizontal:
+        spacing.xl,
+
+      borderRadius:
+        radius.pill,
+
+      borderWidth: 1,
+
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    buttonText: {
+      fontSize: 13,
+      fontWeight: "900",
+      letterSpacing: 0.1,
+    },
+
+    /* -----------------------------------------------------
+       Inputs
+    ----------------------------------------------------- */
+
+    input: {
+      minHeight: 48,
+
+      borderWidth: 1,
+
+      borderRadius:
+        radius.pill,
+
+      paddingHorizontal:
+        spacing.lg,
+
+      fontSize: 15,
+
+      fontWeight: "600",
+    },
+  });

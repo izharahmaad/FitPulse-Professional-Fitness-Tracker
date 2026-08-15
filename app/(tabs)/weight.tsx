@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import {
   Alert,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,7 +10,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 import {
-  Button,
   Card,
   Input,
   Label,
@@ -18,8 +18,13 @@ import {
   Title,
   useAppColors,
 } from "@/components/ui";
+
 import { MiniChart } from "@/components/MiniChart";
 import { useFitness } from "@/hooks/useFitness";
+
+const ACCENT = "#B7FF1A";
+
+type IconName = keyof typeof Ionicons.glyphMap;
 
 export default function WeightScreen() {
   const c = useAppColors();
@@ -33,10 +38,10 @@ export default function WeightScreen() {
 
   const [value, setValue] = useState("");
 
-  /*
-   * Keep the original state array untouched.
-   * Newest weight is displayed first.
-   */
+  /* =========================================================
+     REAL WEIGHT HISTORY
+  ========================================================= */
+
   const entries = useMemo(
     () => state.weights.slice(0, 30),
     [state.weights]
@@ -46,46 +51,113 @@ export default function WeightScreen() {
 
   /*
    * Safely get the oldest tracked weight.
-   * If there are no entries, use the profile's starting weight.
+   * The state array is never mutated.
    */
-  const oldestEntry = entries.length > 0
-    ? entries[entries.length - 1]
-    : undefined;
+  const oldestEntry =
+    entries.length > 0
+      ? entries[entries.length - 1]
+      : undefined;
 
-  const startingWeight = oldestEntry?.weightKg ?? state.profile.weightKg;
+  const startingWeight =
+    oldestEntry?.weightKg ??
+    state.profile.weightKg;
 
-  const weightDifference = latestWeightKg - startingWeight;
+  /* =========================================================
+     REAL CALCULATIONS
+  ========================================================= */
 
-  const targetDifference = latestWeightKg - targetWeight;
+  const weightDifference =
+    latestWeightKg - startingWeight;
+
+  const targetDifference =
+    latestWeightKg - targetWeight;
+
+  const weightGoal =
+    state.profile.weightGoal;
 
   const progressRange = Math.abs(
     startingWeight - targetWeight
   );
 
-  const progress =
-    progressRange > 0
-      ? Math.min(
-          100,
-          Math.max(
-            0,
-            (Math.abs(startingWeight - latestWeightKg) /
-              progressRange) *
-              100
-          )
-        )
-      : 0;
+  let progress = 0;
 
-  const isMovingTowardGoal =
-    state.profile.weightGoal === "lose"
+  if (progressRange > 0) {
+    if (weightGoal === "lose") {
+      progress =
+        ((startingWeight -
+          latestWeightKg) /
+          progressRange) *
+        100;
+    } else if (weightGoal === "gain") {
+      progress =
+        ((latestWeightKg -
+          startingWeight) /
+          progressRange) *
+        100;
+    } else {
+      const currentDistance =
+        Math.abs(
+          latestWeightKg -
+            targetWeight
+        );
+
+      progress =
+        100 -
+        (currentDistance /
+          progressRange) *
+          100;
+    }
+  }
+
+  progress = Math.max(
+    0,
+    Math.min(100, progress)
+  );
+
+  const goalReached =
+    Math.abs(
+      latestWeightKg -
+        targetWeight
+    ) < 0.1;
+
+  const movingTowardGoal =
+    weightGoal === "lose"
       ? weightDifference < 0
-      : state.profile.weightGoal === "gain"
+      : weightGoal === "gain"
         ? weightDifference > 0
         : Math.abs(weightDifference) < 0.1;
+
+  const goalLabel =
+    weightGoal === "lose"
+      ? "Lose"
+      : weightGoal === "gain"
+        ? "Gain"
+        : "Maintain";
+
+  const goalIcon: IconName =
+    weightGoal === "lose"
+      ? "trending-down-outline"
+      : weightGoal === "gain"
+        ? "trending-up-outline"
+        : "remove-outline";
+
+  const statusLabel = goalReached
+    ? "Reached"
+    : movingTowardGoal
+      ? "On track"
+      : "Review";
+
+  /* =========================================================
+     SAVE WEIGHT
+  ========================================================= */
 
   const saveWeight = () => {
     const numericValue = Number(value);
 
-    if (!value.trim() || !Number.isFinite(numericValue)) {
+    if (
+      !value.trim() ||
+      !Number.isFinite(numericValue)
+    ) {
       Alert.alert(
         "Invalid weight",
         "Please enter a valid weight."
@@ -93,7 +165,10 @@ export default function WeightScreen() {
       return;
     }
 
-    if (numericValue < 20 || numericValue > 400) {
+    if (
+      numericValue < 20 ||
+      numericValue > 400
+    ) {
       Alert.alert(
         "Invalid weight",
         "Please enter a weight between 20 kg and 400 kg."
@@ -105,10 +180,14 @@ export default function WeightScreen() {
     setValue("");
   };
 
+  /* =========================================================
+     DELETE
+  ========================================================= */
+
   const confirmDelete = (id: string) => {
     Alert.alert(
       "Delete weigh-in?",
-      "This weigh-in will be removed from your history.",
+      "This measurement will be removed from your history.",
       [
         {
           text: "Cancel",
@@ -129,38 +208,66 @@ export default function WeightScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
+        {/* ===================================================
+            HEADER
+        =================================================== */}
+
         <View style={styles.header}>
-          <View>
+          <View style={styles.headerText}>
             <Subtitle>Body progress</Subtitle>
+
             <Title>Weight</Title>
+
+            <Text
+              style={[
+                styles.headerDescription,
+                { color: c.muted },
+              ]}
+            >
+              Track your measurements and see how
+              you're moving toward your target.
+            </Text>
           </View>
 
           <View
             style={[
               styles.headerIcon,
-              { backgroundColor: c.primarySoft },
+              {
+                backgroundColor: `${ACCENT}14`,
+                borderColor: `${ACCENT}28`,
+              },
             ]}
           >
             <Ionicons
               name="scale-outline"
-              size={22}
-              color={c.primary}
+              size={21}
+              color={ACCENT}
             />
           </View>
         </View>
 
-        {/* Current Weight */}
-        <Card style={styles.hero}>
+        {/* ===================================================
+            CURRENT WEIGHT
+        =================================================== */}
+
+        <Card
+          style={[
+            styles.hero,
+            {
+              backgroundColor: c.surface,
+              borderColor: c.border,
+            },
+          ]}
+        >
           <View style={styles.heroTop}>
-            <View>
+            <View style={styles.heroMain}>
               <Text
                 style={[
-                  styles.label,
+                  styles.overline,
                   { color: c.muted },
                 ]}
               >
-                Current weight
+                CURRENT WEIGHT
               </Text>
 
               <View style={styles.weightRow}>
@@ -175,48 +282,72 @@ export default function WeightScreen() {
 
                 <Text
                   style={[
-                    styles.unit,
+                    styles.weightUnit,
                     { color: c.muted },
                   ]}
                 >
                   kg
                 </Text>
               </View>
+
+              <View style={styles.goalPill}>
+                <View
+                  style={[
+                    styles.goalPillCircle,
+                    {
+                      backgroundColor: `${ACCENT}12`,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={goalIcon}
+                    size={14}
+                    color={ACCENT}
+                  />
+                </View>
+
+                <Text
+                  style={[
+                    styles.goalPillText,
+                    {
+                      color:
+                        movingTowardGoal ||
+                        goalReached
+                          ? ACCENT
+                          : c.muted,
+                    },
+                  ]}
+                >
+                  {goalLabel}
+                </Text>
+              </View>
             </View>
 
             <View
               style={[
-                styles.goalBadge,
+                styles.statusCircle,
                 {
-                  backgroundColor: isMovingTowardGoal
-                    ? c.primarySoft
-                    : c.surfaceAlt,
+                  backgroundColor: `${ACCENT}08`,
+                  borderColor: ACCENT,
                 },
               ]}
             >
-              <Ionicons
-                name={
-                  state.profile.weightGoal === "gain"
-                    ? "trending-up-outline"
-                    : state.profile.weightGoal === "lose"
-                      ? "trending-down-outline"
-                      : "remove-outline"
-                }
-                size={17}
-                color={c.primary}
-              />
+              <Text
+                style={[
+                  styles.statusPercent,
+                  { color: c.text },
+                ]}
+              >
+                {Math.round(progress)}%
+              </Text>
 
               <Text
                 style={[
-                  styles.goalBadgeText,
-                  { color: c.primary },
+                  styles.statusPercentLabel,
+                  { color: c.muted },
                 ]}
               >
-                {state.profile.weightGoal === "lose"
-                  ? "Lose"
-                  : state.profile.weightGoal === "gain"
-                    ? "Gain"
-                    : "Maintain"}
+                progress
               </Text>
             </View>
           </View>
@@ -228,70 +359,68 @@ export default function WeightScreen() {
             ]}
           />
 
-          <View style={styles.targetRow}>
-            <View>
-              <Text
-                style={[
-                  styles.smallLabel,
-                  { color: c.muted },
-                ]}
-              >
-                Target
-              </Text>
+          <View style={styles.goalSummary}>
+            <SummaryItem
+              icon="flag-outline"
+              label="Target"
+              value={`${targetWeight.toFixed(1)} kg`}
+              c={c}
+            />
 
-              <Text
-                style={[
-                  styles.targetValue,
-                  { color: c.text },
-                ]}
-              >
-                {targetWeight.toFixed(1)} kg
-              </Text>
-            </View>
+            <View
+              style={[
+                styles.summaryDivider,
+                {
+                  backgroundColor: c.border,
+                },
+              ]}
+            />
 
-            <View style={styles.targetRight}>
-              <Text
-                style={[
-                  styles.smallLabel,
-                  { color: c.muted },
-                ]}
-              >
-                Remaining
-              </Text>
-
-              <Text
-                style={[
-                  styles.targetValue,
-                  { color: c.primary },
-                ]}
-              >
-                {Math.abs(targetDifference).toFixed(1)} kg
-              </Text>
-            </View>
+            <SummaryItem
+              icon={
+                goalReached
+                  ? "checkmark-outline"
+                  : "arrow-down-outline"
+              }
+              label={
+                goalReached
+                  ? "Status"
+                  : "Remaining"
+              }
+              value={
+                goalReached
+                  ? "Reached"
+                  : `${Math.abs(
+                      targetDifference
+                    ).toFixed(1)} kg`
+              }
+              c={c}
+            />
           </View>
 
-          {/* Progress bar */}
           <View
             style={[
               styles.progressTrack,
-              { backgroundColor: c.surfaceAlt },
+              {
+                backgroundColor: c.surfaceAlt,
+              },
             ]}
           >
             <View
               style={[
                 styles.progressFill,
                 {
-                  backgroundColor: c.primary,
+                  backgroundColor: ACCENT,
                   width: `${progress}%`,
                 },
               ]}
             />
           </View>
 
-          <View style={styles.progressLabels}>
+          <View style={styles.progressFooter}>
             <Text
               style={[
-                styles.progressText,
+                styles.progressLabel,
                 { color: c.muted },
               ]}
             >
@@ -300,8 +429,8 @@ export default function WeightScreen() {
 
             <Text
               style={[
-                styles.progressText,
-                { color: c.primary },
+                styles.progressValue,
+                { color: ACCENT },
               ]}
             >
               {Math.round(progress)}%
@@ -309,12 +438,17 @@ export default function WeightScreen() {
           </View>
         </Card>
 
-        {/* Statistics */}
+        {/* ===================================================
+            QUICK STATS
+        =================================================== */}
+
         <View style={styles.statsGrid}>
           <Stat
-            icon="trending-down-outline"
+            icon="swap-vertical-outline"
             title="Change"
-            value={`${Math.abs(weightDifference).toFixed(1)} kg`}
+            value={`${Math.abs(
+              weightDifference
+            ).toFixed(1)} kg`}
             subtitle={
               weightDifference === 0
                 ? "No change"
@@ -322,6 +456,7 @@ export default function WeightScreen() {
                   ? "Down"
                   : "Up"
             }
+            c={c}
           />
 
           <Stat
@@ -329,6 +464,7 @@ export default function WeightScreen() {
             title="Target"
             value={`${targetWeight.toFixed(1)} kg`}
             subtitle="Goal weight"
+            c={c}
           />
 
           <Stat
@@ -336,32 +472,55 @@ export default function WeightScreen() {
             title="Entries"
             value={`${entries.length}`}
             subtitle="Tracked"
+            c={c}
           />
 
           <Stat
-            icon="analytics-outline"
+            icon="checkmark-circle-outline"
             title="Status"
-            value={
-              isMovingTowardGoal
-                ? "On track"
-                : "Review"
-            }
-            subtitle="Progress"
+            value={statusLabel}
+            subtitle="Goal status"
+            c={c}
           />
         </View>
 
-        {/* New weigh-in */}
-        <Text
+        {/* ===================================================
+            NEW WEIGH-IN
+        =================================================== */}
+
+        <SectionHeader
+          title="New weigh-in"
+          subtitle="Add your latest measurement"
+          icon="add-circle-outline"
+        />
+
+        <Card
           style={[
-            styles.sectionTitle,
-            { color: c.text },
+            styles.inputCard,
+            {
+              backgroundColor: c.surface,
+              borderColor: c.border,
+            },
           ]}
         >
-          New weigh-in
-        </Text>
+          <View style={styles.inputLabelRow}>
+            <View
+              style={[
+                styles.inputCircle,
+                {
+                  backgroundColor: `${ACCENT}12`,
+                },
+              ]}
+            >
+              <Ionicons
+                name="scale-outline"
+                size={15}
+                color={ACCENT}
+              />
+            </View>
 
-        <Card>
-          <Label>Weight in kilograms</Label>
+            <Label>Weight in kilograms</Label>
+          </View>
 
           <View style={styles.inputRow}>
             <View style={styles.inputContainer}>
@@ -370,13 +529,22 @@ export default function WeightScreen() {
                 onChangeText={setValue}
                 keyboardType="decimal-pad"
                 placeholder="e.g. 79.5"
+                style={styles.weightInput}
               />
             </View>
 
-            <View style={styles.kgBadge}>
+            <View
+              style={[
+                styles.unitPill,
+                {
+                  backgroundColor: c.surfaceAlt,
+                  borderColor: c.border,
+                },
+              ]}
+            >
               <Text
                 style={[
-                  styles.kgText,
+                  styles.unitPillText,
                   { color: c.muted },
                 ]}
               >
@@ -385,117 +553,251 @@ export default function WeightScreen() {
             </View>
           </View>
 
-          <View style={styles.saveButton}>
-            <Button
-              title="Save weigh-in"
-              onPress={saveWeight}
-            />
-          </View>
-        </Card>
-
-        {/* Trend */}
-        {entries.length > 1 && (
-          <>
-            <View style={styles.sectionHeader}>
-              <View>
-                <Text
-                  style={[
-                    styles.sectionTitle,
-                    { color: c.text },
-                  ]}
-                >
-                  Weight trend
-                </Text>
-
-                <Text
-                  style={[
-                    styles.sectionSubtitle,
-                    { color: c.muted },
-                  ]}
-                >
-                  Your recent progress
-                </Text>
-              </View>
-
-              <View
-                style={[
-                  styles.trendBadge,
-                  {
-                    backgroundColor: c.primarySoft,
-                  },
-                ]}
-              >
-                <Ionicons
-                  name="analytics-outline"
-                  size={16}
-                  color={c.primary}
-                />
-              </View>
+          <Pressable
+            onPress={saveWeight}
+            style={({ pressed }) => [
+              styles.saveButton,
+              {
+                backgroundColor: c.primarySoft,
+                borderColor: `${c.primary}42`,
+                opacity: pressed ? 0.75 : 1,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.saveIcon,
+                {
+                  backgroundColor: `${ACCENT}14`,
+                },
+              ]}
+            >
+              <Ionicons
+                name="checkmark"
+                size={17}
+                color={ACCENT}
+              />
             </View>
 
-            <Card>
+            <View style={styles.saveText}>
+              <Text
+                style={[
+                  styles.saveTitle,
+                  { color: c.text },
+                ]}
+              >
+                Save weigh-in
+              </Text>
+
+              <Text
+                style={[
+                  styles.saveSubtitle,
+                  { color: c.muted },
+                ]}
+              >
+                Add this measurement to your progress
+              </Text>
+            </View>
+
+            <Ionicons
+              name="arrow-forward"
+              size={17}
+              color={ACCENT}
+            />
+          </Pressable>
+        </Card>
+
+        {/* ===================================================
+            TREND
+        =================================================== */}
+
+        {entries.length > 1 && (
+          <>
+            <SectionHeader
+              title="Weight trend"
+              subtitle="Your recent measurements"
+              icon="analytics-outline"
+            />
+
+            <Card
+              style={[
+                styles.chartCard,
+                {
+                  backgroundColor: c.surface,
+                  borderColor: c.border,
+                },
+              ]}
+            >
+              <View style={styles.chartTop}>
+                <View>
+                  <Text
+                    style={[
+                      styles.chartTitle,
+                      { color: c.text },
+                    ]}
+                  >
+                    Recent progress
+                  </Text>
+
+                  <Text
+                    style={[
+                      styles.chartSubtitle,
+                      { color: c.muted },
+                    ]}
+                  >
+                    Last{" "}
+                    {Math.min(
+                      30,
+                      entries.length
+                    )}{" "}
+                    weigh-ins
+                  </Text>
+                </View>
+
+                <View
+                  style={[
+                    styles.chartBadge,
+                    {
+                      backgroundColor: `${ACCENT}12`,
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.chartDot,
+                      {
+                        backgroundColor: ACCENT,
+                      },
+                    ]}
+                  />
+
+                  <Text
+                    style={[
+                      styles.chartBadgeText,
+                      { color: ACCENT },
+                    ]}
+                  >
+                    TREND
+                  </Text>
+                </View>
+              </View>
+
               <MiniChart
                 values={entries
                   .slice()
                   .reverse()
-                  .map((entry) => entry.weightKg)}
+                  .map(
+                    (entry) =>
+                      entry.weightKg
+                  )}
                 labels={entries
                   .slice()
                   .reverse()
-                  .map((entry) =>
-                    entry.createdAt.slice(5, 10)
+                  .map(
+                    (entry) =>
+                      entry.createdAt.slice(
+                        5,
+                        10
+                      )
                   )}
+                height={155}
               />
+
+              <View
+                style={[
+                  styles.chartDivider,
+                  {
+                    backgroundColor: c.border,
+                  },
+                ]}
+              />
+
+              <View
+                style={styles.chartSummary}
+              >
+                <ChartSummary
+                  label="Current"
+                  value={`${latestWeightKg.toFixed(
+                    1
+                  )} kg`}
+                  c={c}
+                />
+
+                <ChartSummary
+                  label="Target"
+                  value={`${targetWeight.toFixed(
+                    1
+                  )} kg`}
+                  c={c}
+                />
+
+                <ChartSummary
+                  label="Status"
+                  value={statusLabel}
+                  c={c}
+                />
+              </View>
             </Card>
           </>
         )}
 
-        {/* History */}
-        <View style={styles.sectionHeader}>
-          <View>
-            <Text
-              style={[
-                styles.sectionTitle,
-                { color: c.text },
-              ]}
-            >
-              Weight history
-            </Text>
+        {/* ===================================================
+            HISTORY
+        =================================================== */}
 
+        <SectionHeader
+          title="Weight history"
+          subtitle="Your latest measurements"
+          icon="list-outline"
+        />
+
+        <View style={styles.historyHeader}>
+          <View
+            style={[
+              styles.historyCount,
+              {
+                backgroundColor: c.surfaceAlt,
+                borderColor: c.border,
+              },
+            ]}
+          >
             <Text
               style={[
-                styles.sectionSubtitle,
+                styles.historyCountText,
                 { color: c.muted },
               ]}
             >
-              Your latest measurements
+              {entries.length}{" "}
+              {entries.length === 1
+                ? "entry"
+                : "entries"}
             </Text>
           </View>
-
-          <Text
-            style={[
-              styles.entryCount,
-              { color: c.muted },
-            ]}
-          >
-            {entries.length} entries
-          </Text>
         </View>
 
         {entries.length === 0 ? (
-          <Card style={styles.emptyCard}>
+          <Card
+            style={[
+              styles.emptyCard,
+              {
+                backgroundColor: c.surface,
+                borderColor: c.border,
+              },
+            ]}
+          >
             <View
               style={[
                 styles.emptyIcon,
                 {
-                  backgroundColor: c.primarySoft,
+                  backgroundColor: `${ACCENT}12`,
+                  borderColor: `${ACCENT}25`,
                 },
               ]}
             >
               <Ionicons
                 name="scale-outline"
-                size={28}
-                color={c.primary}
+                size={27}
+                color={ACCENT}
               />
             </View>
 
@@ -514,15 +816,12 @@ export default function WeightScreen() {
                 { color: c.muted },
               ]}
             >
-              Add your first weigh-in above to start
-              building your weight trend.
+              Add your first measurement above to
+              start building your weight trend.
             </Text>
           </Card>
         ) : (
           entries.map((entry, index) => {
-            /*
-             * Safely access the previous entry.
-             */
             const previousEntry =
               entries[index + 1];
 
@@ -531,32 +830,46 @@ export default function WeightScreen() {
 
             const difference =
               previousWeight !== undefined
-                ? entry.weightKg - previousWeight
+                ? entry.weightKg -
+                  previousWeight
                 : 0;
 
+            const changeColor =
+              difference < 0
+                ? ACCENT
+                : difference > 0
+                  ? c.danger
+                  : c.muted;
+
             return (
-              <Card
+              <View
                 key={entry.id}
-                style={styles.historyCard}
+                style={[
+                  styles.historyItem,
+                  {
+                    backgroundColor: c.surface,
+                    borderColor: c.border,
+                  },
+                ]}
               >
                 <View style={styles.historyLeft}>
                   <View
                     style={[
-                      styles.historyIcon,
+                      styles.historyCircle,
                       {
-                        backgroundColor:
-                          c.surfaceAlt,
+                        backgroundColor: `${ACCENT}12`,
+                        borderColor: `${ACCENT}22`,
                       },
                     ]}
                   >
                     <Ionicons
                       name="scale-outline"
-                      size={18}
-                      color={c.primary}
+                      size={17}
+                      color={ACCENT}
                     />
                   </View>
 
-                  <View>
+                  <View style={styles.historyInfo}>
                     <Text
                       style={[
                         styles.historyWeight,
@@ -579,9 +892,20 @@ export default function WeightScreen() {
                   </View>
                 </View>
 
-                <View style={styles.historyRight}>
-                  {index < entries.length - 1 && (
-                    <View style={styles.changeContainer}>
+                <View
+                  style={styles.historyRight}
+                >
+                  {index <
+                    entries.length - 1 && (
+                    <View
+                      style={[
+                        styles.changePill,
+                        {
+                          backgroundColor: `${changeColor}12`,
+                          borderColor: `${changeColor}25`,
+                        },
+                      ]}
+                    >
                       <Ionicons
                         name={
                           difference < 0
@@ -590,22 +914,15 @@ export default function WeightScreen() {
                               ? "arrow-up-outline"
                               : "remove-outline"
                         }
-                        size={14}
-                        color={
-                          difference <= 0
-                            ? c.primary
-                            : c.danger
-                        }
+                        size={11}
+                        color={changeColor}
                       />
 
                       <Text
                         style={[
                           styles.changeText,
                           {
-                            color:
-                              difference <= 0
-                                ? c.primary
-                                : c.danger,
+                            color: changeColor,
                           },
                         ]}
                       >
@@ -616,71 +933,234 @@ export default function WeightScreen() {
                     </View>
                   )}
 
-                  <Ionicons
-                    name="trash-outline"
-                    size={19}
-                    color={c.muted}
+                  <Pressable
                     onPress={() =>
-                      confirmDelete(entry.id)
+                      confirmDelete(
+                        entry.id
+                      )
                     }
-                  />
+                    style={({ pressed }) => [
+                      styles.deleteButton,
+                      {
+                        backgroundColor:
+                          c.surfaceAlt,
+                        opacity: pressed
+                          ? 0.55
+                          : 1,
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name="trash-outline"
+                      size={16}
+                      color={c.muted}
+                    />
+                  </Pressable>
                 </View>
-              </Card>
+              </View>
             );
           })
         )}
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Ionicons
-            name="information-circle-outline"
-            size={16}
-            color={c.muted}
-          />
+        {/* ===================================================
+            TIP
+        =================================================== */}
+
+        <View
+          style={[
+            styles.tipPill,
+            {
+              backgroundColor: c.surface,
+              borderColor: c.border,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.tipCircle,
+              {
+                backgroundColor: `${ACCENT}12`,
+              },
+            ]}
+          >
+            <Ionicons
+              name="information-outline"
+              size={15}
+              color={ACCENT}
+            />
+          </View>
 
           <Text
             style={[
-              styles.footerText,
+              styles.tipText,
               { color: c.muted },
             ]}
           >
-            Consistent measurements are more useful
-            than daily fluctuations. Try weighing
-            yourself under similar conditions.
+            Consistent measurements are more useful than
+            daily fluctuations. Try weighing yourself under
+            similar conditions.
           </Text>
         </View>
+
+        <View style={styles.bottomSpace} />
       </ScrollView>
     </Screen>
   );
 }
+
+/* ============================================================
+   SECTION HEADER
+============================================================ */
+
+function SectionHeader({
+  title,
+  subtitle,
+  icon,
+}: {
+  title: string;
+  subtitle: string;
+  icon?: IconName;
+}) {
+  const c = useAppColors();
+
+  return (
+    <View style={styles.sectionHeader}>
+      <View style={styles.sectionText}>
+        <Text
+          style={[
+            styles.sectionTitle,
+            { color: c.text },
+          ]}
+        >
+          {title}
+        </Text>
+
+        <Text
+          style={[
+            styles.sectionSubtitle,
+            { color: c.muted },
+          ]}
+        >
+          {subtitle}
+        </Text>
+      </View>
+
+      {icon ? (
+        <View
+          style={[
+            styles.sectionIcon,
+            {
+              backgroundColor: `${ACCENT}14`,
+              borderColor: `${ACCENT}25`,
+            },
+          ]}
+        >
+          <Ionicons
+            name={icon}
+            size={17}
+            color={ACCENT}
+          />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/* ============================================================
+   SUMMARY ITEM
+============================================================ */
+
+function SummaryItem({
+  icon,
+  label,
+  value,
+  c,
+}: {
+  icon: IconName;
+  label: string;
+  value: string;
+  c: ReturnType<typeof useAppColors>;
+}) {
+  return (
+    <View style={styles.summaryItem}>
+      <View
+        style={[
+          styles.summaryItemCircle,
+          {
+            backgroundColor: `${ACCENT}12`,
+          },
+        ]}
+      >
+        <Ionicons
+          name={icon}
+          size={14}
+          color={ACCENT}
+        />
+      </View>
+
+      <View style={styles.summaryItemText}>
+        <Text
+          style={[
+            styles.summaryItemLabel,
+            { color: c.muted },
+          ]}
+        >
+          {label}
+        </Text>
+
+        <Text
+          style={[
+            styles.summaryItemValue,
+            { color: c.text },
+          ]}
+        >
+          {value}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+/* ============================================================
+   STAT
+============================================================ */
 
 function Stat({
   icon,
   title,
   value,
   subtitle,
+  c,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName;
   title: string;
   value: string;
   subtitle: string;
+  c: ReturnType<typeof useAppColors>;
 }) {
-  const c = useAppColors();
-
   return (
-    <Card style={styles.statCard}>
+    <Card
+      style={[
+        styles.statCard,
+        {
+          backgroundColor: c.surface,
+          borderColor: c.border,
+        },
+      ]}
+    >
       <View
         style={[
           styles.statIcon,
           {
-            backgroundColor: c.primarySoft,
+            backgroundColor: `${ACCENT}12`,
+            borderColor: `${ACCENT}22`,
           },
         ]}
       >
         <Ionicons
           name={icon}
-          size={17}
-          color={c.primary}
+          size={16}
+          color={ACCENT}
         />
       </View>
 
@@ -698,6 +1178,7 @@ function Stat({
           styles.statValue,
           { color: c.text },
         ]}
+        numberOfLines={1}
       >
         {value}
       </Text>
@@ -714,106 +1195,222 @@ function Stat({
   );
 }
 
+/* ============================================================
+   CHART SUMMARY
+============================================================ */
+
+function ChartSummary({
+  label,
+  value,
+  c,
+}: {
+  label: string;
+  value: string;
+  c: ReturnType<typeof useAppColors>;
+}) {
+  return (
+    <View style={styles.chartSummaryItem}>
+      <Text
+        style={[
+          styles.chartSummaryLabel,
+          { color: c.muted },
+        ]}
+      >
+        {label}
+      </Text>
+
+      <Text
+        style={[
+          styles.chartSummaryValue,
+          { color: c.text },
+        ]}
+        numberOfLines={1}
+      >
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+/* ============================================================
+   STYLES
+============================================================ */
+
 const styles = StyleSheet.create({
   content: {
-    padding: 16,
-    paddingBottom: 120,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 150,
   },
+
+  /* Header */
 
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    justifyContent: "space-between",
+    marginBottom: 19,
+  },
+
+  headerText: {
+    flex: 1,
+    paddingRight: 12,
+  },
+
+  headerDescription: {
+    fontSize: 11,
+    lineHeight: 17,
+    marginTop: 4,
   },
 
   headerIcon: {
     width: 46,
     height: 46,
-    borderRadius: 15,
+    borderRadius: 23,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
 
+  /* Hero */
+
   hero: {
-    marginTop: 2,
-    padding: 20,
+    borderRadius: 26,
+    borderWidth: 1,
+    padding: 19,
+    marginBottom: 24,
   },
 
   heroTop: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    alignItems: "flex-start",
   },
 
-  label: {
-    fontSize: 13,
-    fontWeight: "600",
+  heroMain: {
+    flex: 1,
+    paddingRight: 10,
+  },
+
+  overline: {
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 1.15,
+    marginBottom: 4,
   },
 
   weightRow: {
     flexDirection: "row",
-    alignItems: "flex-end",
-    marginTop: 3,
+    alignItems: "baseline",
   },
 
   currentWeight: {
-    fontSize: 46,
+    fontSize: 45,
     fontWeight: "900",
-    letterSpacing: -1,
+    letterSpacing: -1.2,
   },
 
-  unit: {
-    fontSize: 17,
+  weightUnit: {
+    fontSize: 16,
     fontWeight: "700",
-    marginBottom: 8,
     marginLeft: 5,
   },
 
-  goalBadge: {
+  goalPill: {
+    alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 11,
-    paddingVertical: 8,
     borderRadius: 999,
+    backgroundColor: `${ACCENT}10`,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    marginTop: 8,
   },
 
-  goalBadgeText: {
-    fontSize: 12,
-    fontWeight: "800",
+  goalPillCircle: {
+    width: 23,
+    height: 23,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 5,
+  },
+
+  goalPillText: {
+    fontSize: 9,
+    fontWeight: "900",
+  },
+
+  statusCircle: {
+    width: 78,
+    height: 78,
+    borderRadius: 39,
+    borderWidth: 3,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  statusPercent: {
+    fontSize: 17,
+    fontWeight: "900",
+  },
+
+  statusPercentLabel: {
+    fontSize: 8,
+    marginTop: 1,
   },
 
   divider: {
     height: 1,
-    marginVertical: 18,
+    marginVertical: 17,
   },
 
-  targetRow: {
+  goalSummary: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "center",
   },
 
-  targetRight: {
-    alignItems: "flex-end",
+  summaryItem: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
   },
 
-  smallLabel: {
-    fontSize: 12,
+  summaryItemCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  summaryItemText: {
+    flex: 1,
+    marginLeft: 8,
+  },
+
+  summaryItemLabel: {
+    fontSize: 8,
     fontWeight: "600",
   },
 
-  targetValue: {
-    fontSize: 17,
+  summaryItemValue: {
+    fontSize: 12,
     fontWeight: "900",
-    marginTop: 3,
+    marginTop: 2,
+  },
+
+  summaryDivider: {
+    width: 1,
+    height: 31,
+    marginHorizontal: 9,
   },
 
   progressTrack: {
-    height: 9,
+    height: 8,
     borderRadius: 999,
     overflow: "hidden",
-    marginTop: 18,
+    marginTop: 17,
   },
 
   progressFill: {
@@ -821,72 +1418,120 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
 
-  progressLabels: {
+  progressFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 8,
   },
 
-  progressText: {
-    fontSize: 11,
-    fontWeight: "700",
+  progressLabel: {
+    fontSize: 9,
+    fontWeight: "600",
   },
+
+  progressValue: {
+    fontSize: 9,
+    fontWeight: "900",
+  },
+
+  /* Stats */
 
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
-    marginTop: 12,
+    justifyContent: "space-between",
+    rowGap: 10,
+    marginBottom: 24,
   },
 
   statCard: {
-    width: "48%",
+    width: "48.5%",
+    minHeight: 115,
+    borderRadius: 21,
     marginBottom: 0,
-    padding: 14,
   },
 
   statIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 11,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 10,
+    marginBottom: 9,
   },
 
   statTitle: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "600",
   },
 
   statValue: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: "900",
     marginTop: 3,
   },
 
   statSubtitle: {
-    fontSize: 11,
+    fontSize: 9,
     marginTop: 2,
   },
 
-  sectionTitle: {
-    fontSize: 19,
-    fontWeight: "900",
-    marginTop: 22,
-    marginBottom: 12,
-  },
+  /* Section */
 
   sectionHeader: {
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: 10,
+  },
+
+  sectionText: {
+    flex: 1,
+  },
+
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: "900",
   },
 
   sectionSubtitle: {
-    fontSize: 12,
-    marginTop: -7,
-    marginBottom: 12,
+    fontSize: 10,
+    lineHeight: 15,
+    marginTop: 3,
+  },
+
+  sectionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  /* New weigh-in */
+
+  inputCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 24,
+  },
+
+  inputLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+
+  inputCircle: {
+    width: 27,
+    height: 27,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 7,
   },
 
   inputRow: {
@@ -899,127 +1544,285 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  kgBadge: {
-    height: 50,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
+  weightInput: {
+    minHeight: 50,
   },
 
-  kgText: {
-    fontSize: 14,
+  unitPill: {
+    height: 50,
+    minWidth: 54,
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 14,
+  },
+
+  unitPillText: {
+    fontSize: 12,
     fontWeight: "800",
   },
 
   saveButton: {
-    marginTop: 10,
+    minHeight: 62,
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 9,
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 11,
   },
 
-  trendBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
+  saveIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 12,
   },
 
-  entryCount: {
-    fontSize: 12,
-    fontWeight: "600",
-    marginBottom: 12,
+  saveText: {
+    flex: 1,
+    marginLeft: 10,
   },
 
-  historyCard: {
+  saveTitle: {
+    fontSize: 13,
+    fontWeight: "900",
+  },
+
+  saveSubtitle: {
+    fontSize: 9,
+    marginTop: 2,
+  },
+
+  /* Chart */
+
+  chartCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 24,
+  },
+
+  chartTop: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: 7,
+  },
+
+  chartTitle: {
+    fontSize: 14,
+    fontWeight: "900",
+  },
+
+  chartSubtitle: {
+    fontSize: 9,
+    marginTop: 2,
+  },
+
+  chartBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+
+  chartDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    marginRight: 5,
+  },
+
+  chartBadgeText: {
+    fontSize: 7,
+    fontWeight: "900",
+    letterSpacing: 0.6,
+  },
+
+  chartDivider: {
+    height: 1,
+    marginVertical: 15,
+  },
+
+  chartSummary: {
+    flexDirection: "row",
+  },
+
+  chartSummaryItem: {
+    flex: 1,
+  },
+
+  chartSummaryLabel: {
+    fontSize: 9,
+    fontWeight: "600",
+  },
+
+  chartSummaryValue: {
+    fontSize: 13,
+    fontWeight: "900",
+    marginTop: 3,
+  },
+
+  /* History */
+
+  historyHeader: {
+    alignItems: "flex-end",
     marginBottom: 9,
-    paddingVertical: 13,
-    paddingHorizontal: 14,
+    marginTop: -2,
+  },
+
+  historyCount: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+  },
+
+  historyCountText: {
+    fontSize: 8,
+    fontWeight: "800",
+  },
+
+  historyItem: {
+    minHeight: 68,
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
   },
 
   historyLeft: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 11,
+    minWidth: 0,
   },
 
-  historyIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+  historyCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
 
+  historyInfo: {
+    flex: 1,
+    marginLeft: 10,
+  },
+
   historyWeight: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "900",
   },
 
   historyDate: {
-    fontSize: 11,
+    fontSize: 9,
     marginTop: 3,
   },
 
   historyRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: 7,
+    marginLeft: 8,
   },
 
-  changeContainer: {
+  changePill: {
+    minHeight: 28,
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 7,
     flexDirection: "row",
     alignItems: "center",
-    gap: 2,
+    justifyContent: "center",
   },
 
   changeText: {
-    fontSize: 12,
-    fontWeight: "800",
+    fontSize: 8,
+    fontWeight: "900",
+    marginLeft: 2,
   },
 
-  emptyCard: {
+  deleteButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: "center",
-    paddingVertical: 28,
+    justifyContent: "center",
+  },
+
+  /* Empty */
+
+  emptyCard: {
+    borderRadius: 23,
+    borderWidth: 1,
+    alignItems: "center",
     paddingHorizontal: 22,
+    paddingVertical: 28,
   },
 
   emptyIcon: {
-    width: 58,
-    height: 58,
-    borderRadius: 19,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
   },
 
   emptyTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "900",
   },
 
   emptyText: {
-    textAlign: "center",
-    lineHeight: 20,
-    fontSize: 13,
-    marginTop: 6,
-  },
-
-  footer: {
-    flexDirection: "row",
-    gap: 7,
-    alignItems: "flex-start",
-    marginTop: 20,
-    paddingHorizontal: 4,
-    paddingBottom: 10,
-  },
-
-  footerText: {
-    flex: 1,
     fontSize: 11,
-    lineHeight: 17,
+    lineHeight: 18,
+    textAlign: "center",
+    maxWidth: 290,
+    marginTop: 5,
+  },
+
+  /* Tip */
+
+  tipPill: {
+    minHeight: 58,
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 7,
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 16,
+  },
+
+  tipCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  tipText: {
+    flex: 1,
+    fontSize: 9,
+    lineHeight: 15,
+    marginLeft: 9,
+  },
+
+  bottomSpace: {
+    height: 20,
   },
 });
