@@ -25,6 +25,7 @@ import {
 } from "@/components/ui";
 
 import { useFitness } from "@/hooks/useFitness";
+
 import {
   formatKm,
   formatNumber,
@@ -55,8 +56,10 @@ export default function HomeScreen() {
      PROFILE IMAGE
   ========================================================= */
 
-  const [profileImage, setProfileImage] =
-    useState<string | null>(null);
+  const [
+    profileImage,
+    setProfileImage,
+  ] = useState<string | null>(null);
 
   const loadProfileImage =
     useCallback(async () => {
@@ -89,10 +92,11 @@ export default function HomeScreen() {
       0
     );
 
-  const calorieGoal = Math.max(
-    1,
-    state.profile.calorieGoal
-  );
+  const calorieGoal =
+    Math.max(
+      1,
+      state.profile.calorieGoal
+    );
 
   const caloriesRemaining =
     Math.max(
@@ -115,10 +119,11 @@ export default function HomeScreen() {
      REAL STEP DATA
   ========================================================= */
 
-  const stepGoal = Math.max(
-    1,
-    state.profile.stepGoal
-  );
+  const stepGoal =
+    Math.max(
+      1,
+      state.profile.stepGoal
+    );
 
   const stepsRemaining =
     Math.max(
@@ -146,10 +151,11 @@ export default function HomeScreen() {
      REAL WATER DATA
   ========================================================= */
 
-  const waterGoal = Math.max(
-    1,
-    state.profile.waterGoalMl
-  );
+  const waterGoal =
+    Math.max(
+      1,
+      state.profile.waterGoalMl
+    );
 
   const waterPercent =
     Math.min(
@@ -194,13 +200,15 @@ export default function HomeScreen() {
     calorieGoal;
 
   /* =========================================================
-     LOADING
+     DATA HYDRATION LOADING
   ========================================================= */
 
   if (!hydrated) {
     return (
       <Screen>
-        <View style={styles.loading}>
+        <View
+          style={styles.loading}
+        >
           <View
             style={[
               styles.loadingCircle,
@@ -215,7 +223,9 @@ export default function HomeScreen() {
             <Ionicons
               name="fitness-outline"
               size={28}
-              color={STEP_GREEN}
+              color={
+                STEP_GREEN
+              }
             />
           </View>
 
@@ -223,7 +233,8 @@ export default function HomeScreen() {
             style={[
               styles.loadingText,
               {
-                color: c.muted,
+                color:
+                  c.muted,
               },
             ]}
           >
@@ -248,8 +259,12 @@ export default function HomeScreen() {
             HEADER
         =================================================== */}
 
-        <View style={styles.header}>
-          <View style={styles.headerText}>
+        <View
+          style={styles.header}
+        >
+          <View
+            style={styles.headerText}
+          >
             <Subtitle>
               Daily overview
             </Subtitle>
@@ -280,7 +295,9 @@ export default function HomeScreen() {
                 "/profile"
               )
             }
-            style={({ pressed }) => [
+            style={({
+              pressed,
+            }) => [
               styles.profileButton,
               {
                 backgroundColor:
@@ -353,7 +370,11 @@ export default function HomeScreen() {
             },
           ]}
         >
-          <View style={styles.stepHeader}>
+          <View
+            style={
+              styles.stepHeader
+            }
+          >
             <View>
               <Text
                 style={[
@@ -416,7 +437,9 @@ export default function HomeScreen() {
           </View>
 
           <View
-            style={styles.ringContainer}
+            style={
+              styles.ringContainer
+            }
           >
             <StepProgressRing
               progress={
@@ -435,7 +458,9 @@ export default function HomeScreen() {
           </View>
 
           <View
-            style={styles.stepBottom}
+            style={
+              styles.stepBottom
+            }
           >
             <View
               style={
@@ -677,7 +702,9 @@ export default function HomeScreen() {
               "/calories"
             )
           }
-          style={({ pressed }) => [
+          style={({
+            pressed,
+          }) => [
             styles.nutritionCard,
             {
               backgroundColor:
@@ -831,9 +858,7 @@ export default function HomeScreen() {
                 },
               ]}
             >
-              {
-                calorieProgress
-              }%
+              {calorieProgress}%
             </Text>
           </View>
         </Pressable>
@@ -929,7 +954,7 @@ export default function HomeScreen() {
         </View>
 
         {/* ===================================================
-            TODAY STATUS
+            TODAY'S PROGRESS
         =================================================== */}
 
         <View
@@ -1034,7 +1059,7 @@ export default function HomeScreen() {
         </View>
 
         {/* ===================================================
-            SMALL DAILY NOTE
+            DAILY NOTE
         =================================================== */}
 
         <View
@@ -1105,7 +1130,7 @@ export default function HomeScreen() {
 }
 
 /* =========================================================
-   STEP RING
+   STEP PROGRESS RING
 ========================================================= */
 
 function StepProgressRing({
@@ -1203,7 +1228,7 @@ function StepProgressRing({
             strokeDashoffset
           }
           rotation="-90"
-          origin={`${size / 2}, ${
+          origin={`${size / 2},${
             size / 2
           }`}
         />
@@ -1298,9 +1323,7 @@ function DashboardMetric({
         <Ionicons
           name={icon}
           size={19}
-          color={
-            color
-          }
+          color={color}
         />
       </View>
 
@@ -1372,10 +1395,10 @@ function QuickAction({
 }) {
   return (
     <Pressable
-      onPress={
-        onPress
-      }
-      style={({ pressed }) => [
+      onPress={onPress}
+      style={({
+        pressed,
+      }) => [
         styles.quickAction,
         {
           backgroundColor:
@@ -1624,7 +1647,8 @@ const styles =
 
     loadingText: {
       fontSize: 14,
-      fontWeight: "600",
+      fontWeight:
+        "600",
     },
 
     /* Header */
@@ -1661,6 +1685,8 @@ const styles =
         "center",
       position:
         "relative",
+      overflow:
+        "visible",
     },
 
     profileImage: {
@@ -1671,7 +1697,8 @@ const styles =
 
     profileInitials: {
       fontSize: 15,
-      fontWeight: "900",
+      fontWeight:
+        "900",
     },
 
     profileStatusDot: {
@@ -1708,13 +1735,16 @@ const styles =
 
     cardEyebrow: {
       fontSize: 10,
-      fontWeight: "800",
-      letterSpacing: 1.2,
+      fontWeight:
+        "800",
+      letterSpacing:
+        1.2,
     },
 
     stepTitle: {
       fontSize: 23,
-      fontWeight: "900",
+      fontWeight:
+        "900",
       marginTop: 3,
     },
 
@@ -1726,7 +1756,8 @@ const styles =
       gap: 6,
       paddingHorizontal: 10,
       paddingVertical: 6,
-      borderRadius: 999,
+      borderRadius:
+        999,
       borderWidth: 1,
     },
 
@@ -1738,8 +1769,10 @@ const styles =
 
     liveText: {
       fontSize: 9,
-      fontWeight: "900",
-      letterSpacing: 0.8,
+      fontWeight:
+        "900",
+      letterSpacing:
+        0.8,
     },
 
     ringContainer: {
@@ -1770,16 +1803,20 @@ const styles =
       color:
         "#F5F7F2",
       fontSize: 34,
-      fontWeight: "900",
-      letterSpacing: -1,
+      fontWeight:
+        "900",
+      letterSpacing:
+        -1,
     },
 
     ringLabel: {
       color:
         STEP_GREEN,
       fontSize: 10,
-      fontWeight: "900",
-      letterSpacing: 1.4,
+      fontWeight:
+        "900",
+      letterSpacing:
+        1.4,
       marginTop: -2,
     },
 
@@ -1787,7 +1824,8 @@ const styles =
       color:
         "#858C82",
       fontSize: 9,
-      fontWeight: "700",
+      fontWeight:
+        "700",
       marginTop: 7,
     },
 
@@ -1809,7 +1847,8 @@ const styles =
 
     bottomValue: {
       fontSize: 18,
-      fontWeight: "900",
+      fontWeight:
+        "900",
     },
 
     bottomLabel: {
@@ -1837,18 +1876,22 @@ const styles =
 
     sectionTitle: {
       fontSize: 18,
-      fontWeight: "900",
-      letterSpacing: -0.2,
+      fontWeight:
+        "900",
+      letterSpacing:
+        -0.2,
     },
 
     sectionCaption: {
       fontSize: 10,
-      fontWeight: "700",
+      fontWeight:
+        "700",
     },
 
     sectionPill: {
       minHeight: 27,
-      borderRadius: 999,
+      borderRadius:
+        999,
       borderWidth: 1,
       paddingHorizontal: 8,
       flexDirection:
@@ -1866,7 +1909,8 @@ const styles =
 
     sectionPillText: {
       fontSize: 8,
-      fontWeight: "700",
+      fontWeight:
+        "700",
     },
 
     viewButton: {
@@ -1881,7 +1925,8 @@ const styles =
 
     viewText: {
       fontSize: 11,
-      fontWeight: "900",
+      fontWeight:
+        "900",
     },
 
     /* Activity */
@@ -1913,7 +1958,8 @@ const styles =
 
     metricTitle: {
       fontSize: 11,
-      fontWeight: "600",
+      fontWeight:
+        "600",
       marginTop: 11,
     },
 
@@ -1928,12 +1974,14 @@ const styles =
 
     metricValue: {
       fontSize: 21,
-      fontWeight: "900",
+      fontWeight:
+        "900",
     },
 
     metricSuffix: {
       fontSize: 9,
-      fontWeight: "700",
+      fontWeight:
+        "700",
     },
 
     /* Nutrition */
@@ -1969,7 +2017,8 @@ const styles =
 
     nutritionTitle: {
       fontSize: 15,
-      fontWeight: "800",
+      fontWeight:
+        "800",
     },
 
     nutritionSubtitle: {
@@ -1984,7 +2033,8 @@ const styles =
 
     calorieMain: {
       fontSize: 20,
-      fontWeight: "900",
+      fontWeight:
+        "900",
     },
 
     calorieRemaining: {
@@ -1994,7 +2044,8 @@ const styles =
 
     progressTrack: {
       height: 8,
-      borderRadius: 999,
+      borderRadius:
+        999,
       overflow:
         "hidden",
       marginTop: 17,
@@ -2002,7 +2053,8 @@ const styles =
 
     progressFill: {
       height: "100%",
-      borderRadius: 999,
+      borderRadius:
+        999,
     },
 
     progressFooter: {
@@ -2017,15 +2069,17 @@ const styles =
 
     progressLabel: {
       fontSize: 9,
-      fontWeight: "600",
+      fontWeight:
+        "600",
     },
 
     progressPercent: {
       fontSize: 9,
-      fontWeight: "900",
+      fontWeight:
+        "900",
     },
 
-    /* Quick Actions */
+    /* Quick actions */
 
     actionsGrid: {
       gap: 8,
@@ -2033,7 +2087,8 @@ const styles =
 
     quickAction: {
       minHeight: 64,
-      borderRadius: 999,
+      borderRadius:
+        999,
       borderWidth: 1,
       flexDirection:
         "row",
@@ -2060,7 +2115,8 @@ const styles =
 
     quickTitle: {
       fontSize: 12,
-      fontWeight: "800",
+      fontWeight:
+        "800",
     },
 
     quickSubtitle: {
@@ -2125,31 +2181,36 @@ const styles =
 
     statusTitle: {
       fontSize: 11,
-      fontWeight: "800",
+      fontWeight:
+        "800",
     },
 
     statusValue: {
       fontSize: 9,
-      fontWeight: "600",
+      fontWeight:
+        "600",
     },
 
     statusTrack: {
       height: 6,
-      borderRadius: 999,
+      borderRadius:
+        999,
       overflow:
         "hidden",
     },
 
     statusFill: {
       height: "100%",
-      borderRadius: 999,
+      borderRadius:
+        999,
     },
 
     /* Daily note */
 
     dailyNote: {
       minHeight: 60,
-      borderRadius: 999,
+      borderRadius:
+        999,
       borderWidth: 1,
       paddingHorizontal: 8,
       paddingVertical: 7,
@@ -2179,7 +2240,8 @@ const styles =
 
     dailyNoteTitle: {
       fontSize: 10,
-      fontWeight: "900",
+      fontWeight:
+        "900",
     },
 
     dailyNoteSubtitle: {

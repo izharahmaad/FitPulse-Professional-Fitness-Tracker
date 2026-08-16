@@ -9,17 +9,13 @@ export default function RootLayout() {
     <FitnessProvider>
       <StatusBar style="auto" />
 
-      <Stack screenOptions={{ headerShown: false }}>
-        {/* App startup */}
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        {/* App startup / welcome screen */}
         <Stack.Screen name="index" />
-
-        {/* First-time onboarding */}
-        <Stack.Screen
-          name="onboarding"
-          options={{
-            gestureEnabled: false,
-          }}
-        />
 
         {/* Main application */}
         <Stack.Screen name="(tabs)" />
