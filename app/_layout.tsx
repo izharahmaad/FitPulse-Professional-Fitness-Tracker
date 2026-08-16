@@ -14,18 +14,29 @@ export default function RootLayout() {
           headerShown: false,
         }}
       >
-        {/* App startup / welcome screen */}
-        <Stack.Screen name="index" />
+        <Stack.Screen
+          name="index"
+          options={{
+            animation: "fade",
+          }}
+        />
 
-        {/* Main application */}
-        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="(tabs)"
+          options={{
+            headerShown: false,
+          }}
+        />
 
-        {/* Add food modal */}
         <Stack.Screen
           name="add-food"
           options={{
             presentation: "modal",
           }}
+        />
+
+        <Stack.Screen
+          name="settings"
         />
       </Stack>
     </FitnessProvider>
