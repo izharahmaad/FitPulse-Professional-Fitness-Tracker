@@ -1,5 +1,6 @@
 import React, {
   useCallback,
+  useEffect,
   useState,
 } from "react";
 import {
@@ -81,28 +82,50 @@ export default function ProfileScreen() {
     useState(false);
 
   /* =========================================================
-     LOAD PROFILE PHOTO
+     KEEP LOCAL FORM IN SYNC WITH PROFILE
   ========================================================= */
 
-  const loadProfileImage = useCallback(
-    async () => {
-      const uri =
-        await getProfileImage();
+  useEffect(() => {
+    setName(p.name);
+    setAge(String(p.age));
+    setHeight(String(p.heightCm));
+    setWeight(String(p.weightKg));
+    setTarget(String(p.targetWeightKg));
+    setStepGoal(String(p.stepGoal));
+    setWaterGoal(String(p.waterGoalMl));
+    setCalorieGoal(String(p.calorieGoal));
+  }, [
+    p.name,
+    p.age,
+    p.heightCm,
+    p.weightKg,
+    p.targetWeightKg,
+    p.stepGoal,
+    p.waterGoalMl,
+    p.calorieGoal,
+  ]);
 
-      setProfileImage(uri);
-    },
-    []
-  );
+  /* =========================================================
+     PROFILE IMAGE
+  ========================================================= */
+
+  const loadProfileImage =
+    useCallback(async () => {
+      try {
+        const uri =
+          await getProfileImage();
+
+        setProfileImage(uri);
+      } catch {
+        setProfileImage(null);
+      }
+    }, []);
 
   useFocusEffect(
     useCallback(() => {
       void loadProfileImage();
     }, [loadProfileImage])
   );
-
-  /* =========================================================
-     PICK PROFILE PHOTO
-  ========================================================= */
 
   const pickProfilePhoto =
     async () => {
@@ -115,26 +138,23 @@ export default function ProfileScreen() {
             "Photo permission required",
             "Allow FitPulse to access your photos so you can choose a profile picture."
           );
-
           return;
         }
 
         const result =
-          await ImagePicker.launchImageLibraryAsync(
-            {
-              mediaTypes: ["images"],
-              allowsEditing: true,
-              aspect: [1, 1],
-              quality: 0.9,
-            }
-          );
+          await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ["images"],
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.9,
+          });
 
         if (result.canceled) {
           return;
         }
 
         const asset =
-          result.assets[0];
+          result.assets?.[0];
 
         if (!asset?.uri) {
           return;
@@ -155,10 +175,6 @@ export default function ProfileScreen() {
       }
     };
 
-  /* =========================================================
-     REMOVE PROFILE PHOTO
-  ========================================================= */
-
   const removePhoto =
     async () => {
       if (!profileImage) {
@@ -177,11 +193,15 @@ export default function ProfileScreen() {
             text: "Remove",
             style: "destructive",
             onPress: async () => {
-              await removeProfileImage();
-
-              setProfileImage(
-                null
-              );
+              try {
+                await removeProfileImage();
+                setProfileImage(null);
+              } catch {
+                Alert.alert(
+                  "Unable to remove photo",
+                  "Please try again."
+                );
+              }
             },
           },
         ]
@@ -189,7 +209,7 @@ export default function ProfileScreen() {
     };
 
   /* =========================================================
-     SAVE PROFILE
+     SAVE
   ========================================================= */
 
   const save = () => {
@@ -197,67 +217,53 @@ export default function ProfileScreen() {
       name:
         name.trim() || "You",
 
-      age: Math.max(
+      age: clamp(
+        Number(age),
         13,
-        Math.min(
-          100,
-          Number(age) || p.age
-        )
+        100,
+        p.age
       ),
 
-      heightCm: Math.max(
+      heightCm: clamp(
+        Number(height),
         120,
-        Math.min(
-          230,
-          Number(height) ||
-            p.heightCm
-        )
+        230,
+        p.heightCm
       ),
 
-      weightKg: Math.max(
+      weightKg: clamp(
+        Number(weight),
         30,
-        Math.min(
-          300,
-          Number(weight) ||
-            p.weightKg
-        )
+        300,
+        p.weightKg
       ),
 
-      targetWeightKg:
-        Math.max(
-          30,
-          Math.min(
-            300,
-            Number(target) ||
-              p.targetWeightKg
-          )
-        ),
+      targetWeightKg: clamp(
+        Number(target),
+        30,
+        300,
+        p.targetWeightKg
+      ),
 
-      stepGoal: Math.max(
+      stepGoal: clamp(
+        Number(stepGoal),
         1000,
-        Math.min(
-          50000,
-          Number(stepGoal) ||
-            p.stepGoal
-        )
+        50000,
+        p.stepGoal
       ),
 
-      waterGoalMl: Math.max(
+      waterGoalMl: clamp(
+        Number(waterGoal),
         500,
-        Math.min(
-          6000,
-          Number(waterGoal) ||
-            p.waterGoalMl
-        )
+        6000,
+        p.waterGoalMl
       ),
 
-      calorieGoal: Math.max(
+      calorieGoal: clamp(
+        Number(calorieGoal),
         1200,
-        Math.min(
-          6000,
-          Number(calorieGoal) ||
-            p.calorieGoal
-        )
+        6000,
+        p.calorieGoal
       ),
     });
 
@@ -265,51 +271,66 @@ export default function ProfileScreen() {
 
     setTimeout(() => {
       setSaved(false);
-    }, 2500);
+    }, 2200);
   };
 
   /* =========================================================
-     CALCULATIONS
+     DERIVED DATA
   ========================================================= */
 
-  const weightDifference =
-    p.weightKg -
+  const currentWeight =
+    Number(weight) ||
+    p.weightKg;
+
+  const targetWeight =
+    Number(target) ||
     p.targetWeightKg;
 
+  const weightDifference =
+    currentWeight -
+    targetWeight;
+
+  const goalType =
+    p.weightGoal;
+
   const targetReached =
-    weightDifference <= 0;
+    goalType === "lose"
+      ? currentWeight <=
+        targetWeight
+      : goalType === "gain"
+      ? currentWeight >=
+        targetWeight
+      : Math.abs(
+          weightDifference
+        ) < 0.2;
+
+  const direction =
+    goalType === "gain"
+      ? "increase"
+      : goalType === "lose"
+      ? "decrease"
+      : "maintain";
+
+  const goalProgress =
+    calculateGoalProgress(
+      p.weightKg,
+      targetWeight,
+      p.weightGoal
+    );
 
   const initials = (
-    p.name?.trim() ||
+    name.trim() ||
+    p.name ||
     "You"
   )
     .split(/\s+/)
     .slice(0, 2)
     .map((part) =>
-      part.charAt(0).toUpperCase()
+      part
+        .charAt(0)
+        .toUpperCase()
     )
     .join("");
-
-  const goalProgress =
-    targetReached
-      ? 100
-      : Math.max(
-          0,
-          Math.min(
-            100,
-            Math.round(
-              ((p.weightKg -
-                Math.abs(
-                  weightDifference
-                )) /
-                Math.max(
-                  1,
-                  p.weightKg
-                )) *
-                100
-            )
-          )
-        );
 
   return (
     <Screen>
@@ -327,7 +348,9 @@ export default function ProfileScreen() {
         =================================================== */}
 
         <View style={styles.header}>
-          <View style={styles.headerText}>
+          <View
+            style={styles.headerCopy}
+          >
             <Subtitle>
               Personal fitness hub
             </Subtitle>
@@ -339,11 +362,14 @@ export default function ProfileScreen() {
             <Text
               style={[
                 styles.headerDescription,
-                { color: c.muted },
+                {
+                  color:
+                    c.muted,
+                },
               ]}
             >
-              Manage your identity, body metrics,
-              goals, and daily targets.
+              Your identity, body metrics, goals, and
+              daily targets in one place.
             </Text>
           </View>
 
@@ -352,27 +378,27 @@ export default function ProfileScreen() {
               styles.headerIcon,
               {
                 backgroundColor:
-                  `${ACCENT}14`,
+                  `${ACCENT}12`,
                 borderColor:
-                  `${ACCENT}28`,
+                  `${ACCENT}25`,
               },
             ]}
           >
             <Ionicons
               name="person"
-              size={21}
+              size={20}
               color={ACCENT}
             />
           </View>
         </View>
 
         {/* ===================================================
-            PROFILE IDENTITY
+            PROFILE HERO
         =================================================== */}
 
         <Card
           style={[
-            styles.identityCard,
+            styles.profileHero,
             {
               backgroundColor:
                 c.surface,
@@ -381,18 +407,20 @@ export default function ProfileScreen() {
             },
           ]}
         >
-          <View style={styles.identityTop}>
-            {/* PROFILE PHOTO */}
-
+          <View
+            style={styles.profileHeroTop}
+          >
             <Pressable
-              onPress={pickProfilePhoto}
+              onPress={
+                pickProfilePhoto
+              }
               onLongPress={
                 profileImage
                   ? removePhoto
                   : undefined
               }
               style={({ pressed }) => [
-                styles.avatarWrapper,
+                styles.avatarButton,
                 {
                   transform: [
                     {
@@ -410,7 +438,9 @@ export default function ProfileScreen() {
                   source={{
                     uri: profileImage,
                   }}
-                  style={styles.avatarImage}
+                  style={
+                    styles.avatarImage
+                  }
                 />
               ) : (
                 <View
@@ -418,7 +448,7 @@ export default function ProfileScreen() {
                     styles.avatarFallback,
                     {
                       backgroundColor:
-                        `${ACCENT}16`,
+                        `${ACCENT}12`,
                       borderColor:
                         `${ACCENT}30`,
                     },
@@ -439,16 +469,10 @@ export default function ProfileScreen() {
                 </View>
               )}
 
-              {/* Camera badge */}
-
               <View
-                style={[
-                  styles.cameraBadge,
-                  {
-                    backgroundColor:
-                      ACCENT,
-                  },
-                ]}
+                style={
+                  styles.cameraBadge
+                }
               >
                 <Ionicons
                   name="camera"
@@ -460,24 +484,30 @@ export default function ProfileScreen() {
 
             <View
               style={
-                styles.identityInfo
+                styles.profileIdentity
               }
             >
               <Text
                 style={[
-                  styles.identityName,
-                  { color: c.text },
+                  styles.profileName,
+                  {
+                    color:
+                      c.text,
+                  },
                 ]}
                 numberOfLines={1}
               >
-                {p.name ||
+                {name.trim() ||
                   "You"}
               </Text>
 
               <Text
                 style={[
-                  styles.identityMeta,
-                  { color: c.muted },
+                  styles.profileMeta,
+                  {
+                    color:
+                      c.muted,
+                  },
                 ]}
               >
                 {p.age} years ·{" "}
@@ -485,32 +515,80 @@ export default function ProfileScreen() {
               </Text>
 
               <View
-                style={styles.tags}
+                style={styles.profileTags}
               >
                 <Tag
                   icon="fitness-outline"
-                  text={capitalize(
+                  label={capitalize(
                     p.activityLevel
                   )}
-                  color={c.primary}
-                  bg={c.primarySoft}
+                  color={
+                    c.primary
+                  }
+                  background={
+                    c.primarySoft
+                  }
                 />
 
                 <Tag
                   icon="flag-outline"
-                  text={capitalize(
+                  label={capitalize(
                     p.weightGoal
                   )}
                   color={ACCENT}
-                  bg={`${ACCENT}10`}
+                  background={`${ACCENT}0C`}
                 />
               </View>
+            </View>
+
+            <View
+              style={[
+                styles.heroStatus,
+                {
+                  backgroundColor:
+                    targetReached
+                      ? `${ACCENT}12`
+                      : c.surfaceAlt,
+                  borderColor:
+                    targetReached
+                      ? `${ACCENT}25`
+                      : c.border,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.heroStatusDot,
+                  {
+                    backgroundColor:
+                      targetReached
+                        ? ACCENT
+                        : c.muted,
+                  },
+                ]}
+              />
+
+              <Text
+                style={[
+                  styles.heroStatusText,
+                  {
+                    color:
+                      targetReached
+                        ? ACCENT
+                        : c.muted,
+                  },
+                ]}
+              >
+                {targetReached
+                  ? "On target"
+                  : "Active"}
+              </Text>
             </View>
           </View>
 
           <View
             style={[
-              styles.divider,
+              styles.heroDivider,
               {
                 backgroundColor:
                   c.border,
@@ -519,29 +597,34 @@ export default function ProfileScreen() {
           />
 
           <View
-            style={styles.identityStats}
+            style={styles.profileStats}
           >
-            <IdentityStat
+            <ProfileStat
+              icon="scale-outline"
               label="Weight"
-              value={`${p.weightKg.toFixed(
+              value={currentWeight.toFixed(
                 1
-              )}`}
+              )}
               unit="kg"
               c={c}
             />
 
-            <IdentityStat
+            <ProfileStat
+              icon="flag-outline"
               label="Target"
-              value={`${p.targetWeightKg.toFixed(
+              value={targetWeight.toFixed(
                 1
-              )}`}
+              )}
               unit="kg"
               c={c}
             />
 
-            <IdentityStat
+            <ProfileStat
+              icon="footsteps-outline"
               label="Steps"
-              value={p.stepGoal.toLocaleString()}
+              value={Number(
+                stepGoal
+              ).toLocaleString()}
               unit="daily"
               c={c}
             />
@@ -550,10 +633,16 @@ export default function ProfileScreen() {
           <Text
             style={[
               styles.photoHint,
-              { color: c.muted },
+              {
+                color:
+                  c.muted,
+              },
             ]}
           >
-            Tap your photo to change it · hold to remove
+            Tap your photo to change it
+            {profileImage
+              ? " · hold to remove"
+              : ""}
           </Text>
         </Card>
 
@@ -578,83 +667,134 @@ export default function ProfileScreen() {
             },
           ]}
         >
-          <View style={styles.goalTop}>
-            <View style={styles.goalText}>
-              <Text
-                style={[
-                  styles.eyebrow,
-                  { color: c.muted },
-                ]}
-              >
-                WEIGHT TARGET
-              </Text>
-
+          <View
+            style={
+              styles.goalTop
+            }
+          >
+            <View
+              style={
+                styles.goalCopy
+              }
+            >
               <View
                 style={
-                  styles.weightRow
+                  styles.goalBadge
                 }
               >
-                <Text
-                  style={[
-                    styles.currentWeight,
-                    {
-                      color:
-                        c.text,
-                    },
-                  ]}
-                >
-                  {p.weightKg.toFixed(
-                    1
-                  )}
-                </Text>
-
-                <Text
-                  style={[
-                    styles.unit,
-                    {
-                      color:
-                        c.muted,
-                    },
-                  ]}
-                >
-                  kg
-                </Text>
-
-                <Ionicons
-                  name="arrow-forward"
-                  size={15}
-                  color={c.muted}
-                  style={{
-                    marginHorizontal:
-                      7,
-                  }}
+                <View
+                  style={
+                    styles.goalBadgeDot
+                  }
                 />
 
                 <Text
                   style={[
-                    styles.targetWeight,
+                    styles.goalBadgeText,
                     {
                       color:
                         ACCENT,
                     },
                   ]}
                 >
-                  {p.targetWeightKg.toFixed(
-                    1
-                  )}
+                  {goalType ===
+                  "lose"
+                    ? "WEIGHT LOSS"
+                    : goalType ===
+                      "gain"
+                    ? "WEIGHT GAIN"
+                    : "MAINTAIN"}
                 </Text>
+              </View>
 
-                <Text
-                  style={[
-                    styles.unit,
-                    {
-                      color:
-                        c.muted,
-                    },
-                  ]}
+              <View
+                style={
+                  styles.goalWeightRow
+                }
+              >
+                <View>
+                  <Text
+                    style={[
+                      styles.smallLabel,
+                      {
+                        color:
+                          c.muted,
+                      },
+                    ]}
+                  >
+                    Current
+                  </Text>
+
+                  <Text
+                    style={[
+                      styles.largeWeight,
+                      {
+                        color:
+                          c.text,
+                      },
+                    ]}
+                  >
+                    {currentWeight.toFixed(
+                      1
+                    )}
+                    <Text
+                      style={
+                        styles.weightUnit
+                      }
+                    >
+                      kg
+                    </Text>
+                  </Text>
+                </View>
+
+                <View
+                  style={
+                    styles.goalArrow
+                  }
                 >
-                  kg
-                </Text>
+                  <Ionicons
+                    name="arrow-forward"
+                    size={15}
+                    color={
+                      c.muted
+                    }
+                  />
+                </View>
+
+                <View>
+                  <Text
+                    style={[
+                      styles.smallLabel,
+                      {
+                        color:
+                          c.muted,
+                      },
+                    ]}
+                  >
+                    Target
+                  </Text>
+
+                  <Text
+                    style={[
+                      styles.largeTarget,
+                      {
+                        color:
+                          ACCENT,
+                      },
+                    ]}
+                  >
+                    {targetWeight.toFixed(
+                      1
+                    )}
+                    <Text
+                      style={
+                        styles.weightUnit
+                      }
+                    >
+                      kg
+                    </Text>
+                  </Text>
+                </View>
               </View>
             </View>
 
@@ -662,10 +802,10 @@ export default function ProfileScreen() {
               style={[
                 styles.goalCircle,
                 {
-                  borderColor:
-                    ACCENT,
                   backgroundColor:
                     `${ACCENT}08`,
+                  borderColor:
+                    ACCENT,
                 },
               ]}
             >
@@ -679,6 +819,18 @@ export default function ProfileScreen() {
                 ]}
               >
                 {goalProgress}%
+              </Text>
+
+              <Text
+                style={[
+                  styles.goalPercentLabel,
+                  {
+                    color:
+                      c.muted,
+                  },
+                ]}
+              >
+                progress
               </Text>
             </View>
           </View>
@@ -705,7 +857,9 @@ export default function ProfileScreen() {
           </View>
 
           <View
-            style={styles.goalFooter}
+            style={
+              styles.goalFooter
+            }
           >
             <Text
               style={[
@@ -722,12 +876,12 @@ export default function ProfileScreen() {
                     weightDifference
                   ).toFixed(
                     1
-                  )} kg remaining`}
+                  )} kg to ${direction}`}
             </Text>
 
             <Text
               style={[
-                styles.goalFooterText,
+                styles.goalFooterPercent,
                 {
                   color:
                     ACCENT,
@@ -740,7 +894,7 @@ export default function ProfileScreen() {
         </Card>
 
         {/* ===================================================
-            PERSONAL INFORMATION
+            PERSONAL
         =================================================== */}
 
         <SectionHeader
@@ -767,7 +921,9 @@ export default function ProfileScreen() {
           >
             <Input
               value={name}
-              onChangeText={setName}
+              onChangeText={
+                setName
+              }
               placeholder="Your name"
               autoCapitalize="words"
             />
@@ -780,7 +936,9 @@ export default function ProfileScreen() {
           >
             <Input
               value={age}
-              onChangeText={setAge}
+              onChangeText={
+                setAge
+              }
               keyboardType="number-pad"
               placeholder="25"
             />
@@ -795,7 +953,9 @@ export default function ProfileScreen() {
           >
             <Input
               value={height}
-              onChangeText={setHeight}
+              onChangeText={
+                setHeight
+              }
               keyboardType="decimal-pad"
               placeholder="180"
             />
@@ -803,13 +963,13 @@ export default function ProfileScreen() {
         </Card>
 
         {/* ===================================================
-            BODY
+            BODY & GOALS
         =================================================== */}
 
         <SectionHeader
           icon="body-outline"
           title="Body & goals"
-          subtitle="Numbers used for fitness calculations"
+          subtitle="Numbers used for progress calculations"
         />
 
         <Card
@@ -830,8 +990,12 @@ export default function ProfileScreen() {
             c={c}
           >
             <Input
-              value={weight}
-              onChangeText={setWeight}
+              value={
+                weight
+              }
+              onChangeText={
+                setWeight
+              }
               keyboardType="decimal-pad"
               placeholder="80"
             />
@@ -845,8 +1009,12 @@ export default function ProfileScreen() {
             last
           >
             <Input
-              value={target}
-              onChangeText={setTarget}
+              value={
+                target
+              }
+              onChangeText={
+                setTarget
+              }
               keyboardType="decimal-pad"
               placeholder="75"
             />
@@ -908,7 +1076,9 @@ export default function ProfileScreen() {
             icon="flame-outline"
             title="Calorie goal"
             description="Daily nutrition target"
-            value={calorieGoal}
+            value={
+              calorieGoal
+            }
             onChangeText={
               setCalorieGoal
             }
@@ -933,14 +1103,14 @@ export default function ProfileScreen() {
                 `${c.primary}45`,
               opacity:
                 pressed
-                  ? 0.72
+                  ? 0.74
                   : 1,
             },
           ]}
         >
           <View
             style={[
-              styles.saveCircle,
+              styles.saveIcon,
               {
                 backgroundColor:
                   `${ACCENT}14`,
@@ -954,12 +1124,16 @@ export default function ProfileScreen() {
                   : "save-outline"
               }
               size={18}
-              color={ACCENT}
+              color={
+                ACCENT
+              }
             />
           </View>
 
           <View
-            style={styles.saveText}
+            style={
+              styles.saveCopy
+            }
           >
             <Text
               style={[
@@ -995,7 +1169,7 @@ export default function ProfileScreen() {
               styles.saveArrow,
               {
                 backgroundColor:
-                  `${ACCENT}12`,
+                  `${ACCENT}10`,
               },
             ]}
           >
@@ -1006,7 +1180,9 @@ export default function ProfileScreen() {
                   : "arrow-forward"
               }
               size={16}
-              color={ACCENT}
+              color={
+                ACCENT
+              }
             />
           </View>
         </Pressable>
@@ -1037,7 +1213,11 @@ export default function ProfileScreen() {
               styles.engineHeader
             }
           >
-            <View>
+            <View
+              style={
+                styles.engineCopy
+              }
+            >
               <Text
                 style={[
                   styles.engineTitle,
@@ -1065,25 +1245,29 @@ export default function ProfileScreen() {
 
             <View
               style={[
-                styles.engineCircle,
+                styles.engineIcon,
                 {
                   backgroundColor:
-                    `${ACCENT}14`,
+                    `${ACCENT}12`,
                   borderColor:
-                    `${ACCENT}25`,
+                    `${ACCENT}22`,
                 },
               ]}
             >
               <Ionicons
                 name="flash-outline"
-                size={19}
-                color={ACCENT}
+                size={18}
+                color={
+                  ACCENT
+                }
               />
             </View>
           </View>
 
           <View
-            style={styles.energyGrid}
+            style={
+              styles.energyGrid
+            }
           >
             <EnergyStat
               label="BMR"
@@ -1104,39 +1288,37 @@ export default function ProfileScreen() {
 
           <View
             style={[
-              styles.calorieTarget,
+              styles.targetCaloriePill,
               {
                 backgroundColor:
                   `${ACCENT}08`,
                 borderColor:
-                  `${ACCENT}24`,
+                  `${ACCENT}22`,
               },
             ]}
           >
             <View
-              style={[
-                styles.calorieTargetCircle,
-                {
-                  backgroundColor:
-                    `${ACCENT}14`,
-                },
-              ]}
+              style={
+                styles.targetCalorieIcon
+              }
             >
               <Ionicons
                 name="flame-outline"
-                size={17}
-                color={ACCENT}
+                size={16}
+                color={
+                  ACCENT
+                }
               />
             </View>
 
             <View
               style={
-                styles.calorieTargetText
+                styles.targetCalorieText
               }
             >
               <Text
                 style={[
-                  styles.calorieTargetLabel,
+                  styles.targetCalorieLabel,
                   {
                     color:
                       c.muted,
@@ -1148,14 +1330,16 @@ export default function ProfileScreen() {
 
               <Text
                 style={[
-                  styles.calorieTargetValue,
+                  styles.targetCalorieValue,
                   {
                     color:
                       c.text,
                   },
                 ]}
               >
-                {p.calorieGoal.toLocaleString()}{" "}
+                {Number(
+                  calorieGoal
+                ).toLocaleString()}{" "}
                 kcal
               </Text>
             </View>
@@ -1188,7 +1372,7 @@ export default function ProfileScreen() {
         >
           <View
             style={[
-              styles.settingsCircle,
+              styles.settingsIcon,
               {
                 backgroundColor:
                   c.surfaceAlt,
@@ -1198,12 +1382,16 @@ export default function ProfileScreen() {
             <Ionicons
               name="settings-outline"
               size={18}
-              color={c.muted}
+              color={
+                c.muted
+              }
             />
           </View>
 
           <View
-            style={styles.settingsText}
+            style={
+              styles.settingsCopy
+            }
           >
             <Text
               style={[
@@ -1230,35 +1418,45 @@ export default function ProfileScreen() {
             </Text>
           </View>
 
-          <Ionicons
-            name="chevron-forward"
-            size={18}
-            color={c.muted}
-          />
+          <View
+            style={
+              styles.settingsArrow
+            }
+          >
+            <Ionicons
+              name="chevron-forward"
+              size={15}
+              color={
+                c.muted
+              }
+            />
+          </View>
         </Pressable>
 
         <View
-          style={styles.bottomSpace}
+          style={
+            styles.bottomSpace
+          }
         />
       </ScrollView>
     </Screen>
   );
 }
 
-/* ========================================================= */
-/* TAG                                                        */
-/* ========================================================= */
+/* ============================================================
+   TAG
+============================================================ */
 
 function Tag({
   icon,
-  text,
+  label,
   color,
-  bg,
+  background,
 }: {
   icon: IconName;
-  text: string;
+  label: string;
   color: string;
-  bg: string;
+  background: string;
 }) {
   return (
     <View
@@ -1266,7 +1464,7 @@ function Tag({
         styles.tag,
         {
           backgroundColor:
-            bg,
+            background,
           borderColor:
             `${color}35`,
         },
@@ -1274,7 +1472,7 @@ function Tag({
     >
       <Ionicons
         name={icon}
-        size={10}
+        size={9}
         color={color}
       />
 
@@ -1286,15 +1484,15 @@ function Tag({
           },
         ]}
       >
-        {text}
+        {label}
       </Text>
     </View>
   );
 }
 
-/* ========================================================= */
-/* SECTION HEADER                                              */
-/* ========================================================= */
+/* ============================================================
+   SECTION HEADER
+============================================================ */
 
 function SectionHeader({
   icon,
@@ -1309,22 +1507,24 @@ function SectionHeader({
 
   return (
     <View
-      style={styles.sectionHeader}
+      style={
+        styles.sectionHeader
+      }
     >
       <View
         style={[
           styles.sectionIcon,
           {
             backgroundColor:
-              `${ACCENT}14`,
+              `${ACCENT}12`,
             borderColor:
-              `${ACCENT}25`,
+              `${ACCENT}24`,
           },
         ]}
       >
         <Ionicons
           name={icon}
-          size={17}
+          size={16}
           color={ACCENT}
         />
       </View>
@@ -1362,16 +1562,18 @@ function SectionHeader({
   );
 }
 
-/* ========================================================= */
-/* IDENTITY STAT                                               */
-/* ========================================================= */
+/* ============================================================
+   PROFILE STAT
+============================================================ */
 
-function IdentityStat({
+function ProfileStat({
+  icon,
   label,
   value,
   unit,
   c,
 }: {
+  icon: IconName;
   label: string;
   value: string;
   unit: string;
@@ -1382,12 +1584,28 @@ function IdentityStat({
   return (
     <View
       style={
-        styles.identityStat
+        styles.profileStat
       }
     >
+      <View
+        style={[
+          styles.profileStatIcon,
+          {
+            backgroundColor:
+              `${ACCENT}10`,
+          },
+        ]}
+      >
+        <Ionicons
+          name={icon}
+          size={12}
+          color={ACCENT}
+        />
+      </View>
+
       <Text
         style={[
-          styles.identityStatLabel,
+          styles.profileStatLabel,
           {
             color:
               c.muted,
@@ -1399,12 +1617,12 @@ function IdentityStat({
 
       <View
         style={
-          styles.identityValueRow
+          styles.profileStatValueRow
         }
       >
         <Text
           style={[
-            styles.identityStatValue,
+            styles.profileStatValue,
             {
               color:
                 c.text,
@@ -1416,7 +1634,7 @@ function IdentityStat({
 
         <Text
           style={[
-            styles.identityStatUnit,
+            styles.profileStatUnit,
             {
               color:
                 c.muted,
@@ -1430,9 +1648,9 @@ function IdentityStat({
   );
 }
 
-/* ========================================================= */
-/* FIELD                                                        */
-/* ========================================================= */
+/* ============================================================
+   FIELD
+============================================================ */
 
 function Field({
   label,
@@ -1468,13 +1686,13 @@ function Field({
             styles.fieldCircle,
             {
               backgroundColor:
-                `${ACCENT}12`,
+                `${ACCENT}10`,
             },
           ]}
         >
           <Ionicons
             name={icon}
-            size={13}
+            size={12}
             color={ACCENT}
           />
         </View>
@@ -1491,9 +1709,9 @@ function Field({
   );
 }
 
-/* ========================================================= */
-/* TARGET ROW                                                  */
-/* ========================================================= */
+/* ============================================================
+   TARGET ROW
+============================================================ */
 
 function TargetRow({
   icon,
@@ -1531,9 +1749,9 @@ function TargetRow({
           styles.targetCircle,
           {
             backgroundColor:
-              `${ACCENT}12`,
+              `${ACCENT}10`,
             borderColor:
-              `${ACCENT}22`,
+              `${ACCENT}20`,
           },
         ]}
       >
@@ -1576,7 +1794,7 @@ function TargetRow({
 
       <View
         style={
-          styles.targetInputWrapper
+          styles.targetInputWrap
         }
       >
         <Input
@@ -1608,9 +1826,9 @@ function TargetRow({
   );
 }
 
-/* ========================================================= */
-/* ENERGY STAT                                                 */
-/* ========================================================= */
+/* ============================================================
+   ENERGY STAT
+============================================================ */
 
 function EnergyStat({
   label,
@@ -1641,16 +1859,16 @@ function EnergyStat({
     >
       <View
         style={[
-          styles.energyCircle,
+          styles.energyIcon,
           {
             backgroundColor:
-              `${ACCENT}12`,
+              `${ACCENT}10`,
           },
         ]}
       >
         <Ionicons
           name={icon}
-          size={17}
+          size={16}
           color={ACCENT}
         />
       </View>
@@ -1694,9 +1912,9 @@ function EnergyStat({
   );
 }
 
-/* ========================================================= */
-/* DIVIDER                                                      */
-/* ========================================================= */
+/* ============================================================
+   DIVIDER
+============================================================ */
 
 function Divider({
   c,
@@ -1718,9 +1936,25 @@ function Divider({
   );
 }
 
-/* ========================================================= */
-/* CAPITALIZE                                                   */
-/* ========================================================= */
+/* ============================================================
+   HELPERS
+============================================================ */
+
+function clamp(
+  value: number,
+  min: number,
+  max: number,
+  fallback: number
+) {
+  if (!Number.isFinite(value)) {
+    return fallback;
+  }
+
+  return Math.max(
+    min,
+    Math.min(max, value)
+  );
+}
 
 function capitalize(
   value: string
@@ -1735,36 +1969,82 @@ function capitalize(
   );
 }
 
-/* ========================================================= */
-/* STYLES                                                       */
-/* ========================================================= */
+function calculateGoalProgress(
+  startingWeight: number,
+  targetWeight: number,
+  goal:
+    | "lose"
+    | "maintain"
+    | "gain"
+) {
+  if (goal === "maintain") {
+    return Math.abs(
+      startingWeight -
+        targetWeight
+    ) < 0.2
+      ? 100
+      : 0;
+  }
+
+  const distance = Math.abs(
+    startingWeight -
+      targetWeight
+  );
+
+  if (distance === 0) {
+    return 100;
+  }
+
+  return Math.min(
+    100,
+    Math.max(
+      0,
+      Math.round(
+        (
+          Math.abs(
+            startingWeight -
+              targetWeight
+          ) /
+          distance
+        ) *
+          100
+      )
+    )
+  );
+}
+
+/* ============================================================
+   STYLES
+============================================================ */
 
 const styles =
   StyleSheet.create({
     content: {
       paddingHorizontal: 16,
       paddingTop: 14,
-      paddingBottom: 140,
+      paddingBottom: 145,
     },
 
     /* Header */
 
     header: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
       justifyContent:
         "space-between",
       marginBottom: 19,
     },
 
-    headerText: {
+    headerCopy: {
       flex: 1,
       paddingRight: 12,
     },
 
     headerDescription: {
-      fontSize: 12,
-      lineHeight: 18,
+      fontSize: 11,
+      lineHeight: 17,
       marginTop: 4,
     },
 
@@ -1779,23 +2059,28 @@ const styles =
         "center",
     },
 
-    /* Identity */
+    /* Profile Hero */
 
-    identityCard: {
-      borderRadius: 26,
-      padding: 17,
-      marginBottom: 25,
+    profileHero: {
+      borderRadius: 25,
+      borderWidth: 1,
+      padding: 16,
+      marginBottom: 24,
     },
 
-    identityTop: {
-      flexDirection: "row",
-      alignItems: "center",
+    profileHeroTop: {
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
     },
 
-    avatarWrapper: {
+    avatarButton: {
       width: 68,
       height: 68,
-      position: "relative",
+      position:
+        "relative",
+      flexShrink: 0,
     },
 
     avatarImage: {
@@ -1809,22 +2094,27 @@ const styles =
       height: 68,
       borderRadius: 34,
       borderWidth: 1,
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
     },
 
     avatarText: {
-      fontSize: 23,
+      fontSize: 24,
       fontWeight: "900",
     },
 
     cameraBadge: {
-      position: "absolute",
+      position:
+        "absolute",
       right: -1,
       bottom: -1,
       width: 25,
       height: 25,
       borderRadius: 13,
+      backgroundColor:
+        ACCENT,
       alignItems:
         "center",
       justifyContent:
@@ -1834,23 +2124,25 @@ const styles =
         "#111812",
     },
 
-    identityInfo: {
+    profileIdentity: {
       flex: 1,
-      marginLeft: 13,
+      minWidth: 0,
+      marginLeft: 12,
     },
 
-    identityName: {
+    profileName: {
       fontSize: 20,
       fontWeight: "900",
     },
 
-    identityMeta: {
-      fontSize: 11,
+    profileMeta: {
+      fontSize: 10,
       marginTop: 3,
     },
 
-    tags: {
-      flexDirection: "row",
+    profileTags: {
+      flexDirection:
+        "row",
       gap: 6,
       marginTop: 8,
     },
@@ -1861,111 +2153,213 @@ const styles =
       alignItems:
         "center",
       gap: 4,
-      borderRadius: 999,
-      borderWidth: 1,
       paddingHorizontal: 7,
       paddingVertical: 4,
+      borderRadius:
+        999,
+      borderWidth: 1,
     },
 
     tagText: {
-      fontSize: 8,
-      fontWeight: "900",
+      fontSize: 7,
+      fontWeight:
+        "900",
     },
 
-    divider: {
+    heroStatus: {
+      minHeight: 26,
+      borderRadius:
+        999,
+      borderWidth: 1,
+      paddingHorizontal: 7,
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      marginLeft: 5,
+    },
+
+    heroStatusDot: {
+      width: 5,
+      height: 5,
+      borderRadius: 3,
+      marginRight: 4,
+    },
+
+    heroStatusText: {
+      fontSize: 7,
+      fontWeight:
+        "900",
+    },
+
+    heroDivider: {
       height: 1,
-      marginVertical: 17,
+      marginVertical: 16,
     },
 
-    identityStats: {
-      flexDirection: "row",
+    profileStats: {
+      flexDirection:
+        "row",
     },
 
-    identityStat: {
+    profileStat: {
       flex: 1,
+      alignItems:
+        "center",
     },
 
-    identityStatLabel: {
-      fontSize: 9,
-      fontWeight: "600",
+    profileStatIcon: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+      marginBottom: 5,
     },
 
-    identityValueRow: {
+    profileStatLabel: {
+      fontSize: 8,
+      fontWeight:
+        "600",
+    },
+
+    profileStatValueRow: {
       flexDirection:
         "row",
       alignItems:
         "baseline",
-      marginTop: 3,
+      marginTop: 2,
     },
 
-    identityStatValue: {
-      fontSize: 16,
-      fontWeight: "900",
+    profileStatValue: {
+      fontSize: 14,
+      fontWeight:
+        "900",
     },
 
-    identityStatUnit: {
-      fontSize: 9,
-      marginLeft: 3,
+    profileStatUnit: {
+      fontSize: 7,
+      marginLeft: 2,
     },
 
     photoHint: {
-      textAlign: "center",
-      fontSize: 9,
-      marginTop: 13,
+      textAlign:
+        "center",
+      fontSize: 8,
+      lineHeight: 14,
+      marginTop: 12,
     },
 
     /* Goal */
 
     goalCard: {
       borderRadius: 23,
+      borderWidth: 1,
       padding: 17,
-      marginBottom: 25,
+      marginBottom: 24,
     },
 
     goalTop: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
       justifyContent:
         "space-between",
     },
 
-    goalText: {
+    goalCopy: {
       flex: 1,
+      paddingRight: 10,
     },
 
-    eyebrow: {
-      fontSize: 9,
-      fontWeight: "900",
-      letterSpacing: 1,
-    },
-
-    weightRow: {
+    goalBadge: {
+      alignSelf:
+        "flex-start",
       flexDirection:
         "row",
       alignItems:
-        "baseline",
-      marginTop: 4,
+        "center",
+      backgroundColor:
+        `${ACCENT}0C`,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius:
+        999,
+      marginBottom: 8,
     },
 
-    currentWeight: {
-      fontSize: 28,
-      fontWeight: "900",
+    goalBadgeDot: {
+      width: 5,
+      height: 5,
+      borderRadius: 3,
+      backgroundColor:
+        ACCENT,
+      marginRight: 5,
     },
 
-    targetWeight: {
+    goalBadgeText: {
+      color:
+        ACCENT,
+      fontSize: 7,
+      fontWeight:
+        "900",
+      letterSpacing:
+        0.8,
+    },
+
+    goalWeightRow: {
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+    },
+
+    smallLabel: {
+      fontSize: 8,
+      fontWeight:
+        "600",
+    },
+
+    largeWeight: {
+      fontSize: 25,
+      fontWeight:
+        "900",
+      marginTop: 2,
+    },
+
+    largeTarget: {
       fontSize: 21,
-      fontWeight: "900",
+      fontWeight:
+        "900",
+      marginTop: 6,
     },
 
-    unit: {
+    weightUnit: {
       fontSize: 9,
-      marginLeft: 3,
+      fontWeight:
+        "700",
+    },
+
+    goalArrow: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor:
+        "rgba(128,128,128,0.08)",
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+      marginHorizontal: 8,
     },
 
     goalCircle: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
+      width: 68,
+      height: 68,
+      borderRadius: 34,
       borderWidth: 3,
       alignItems:
         "center",
@@ -1974,33 +2368,51 @@ const styles =
     },
 
     goalPercent: {
-      fontSize: 14,
-      fontWeight: "900",
+      fontSize: 15,
+      fontWeight:
+        "900",
+    },
+
+    goalPercentLabel: {
+      fontSize: 7,
+      marginTop: 1,
     },
 
     goalTrack: {
-      height: 7,
-      borderRadius: 999,
-      overflow: "hidden",
+      height: 8,
+      borderRadius:
+        999,
+      overflow:
+        "hidden",
       marginTop: 17,
     },
 
     goalFill: {
       height: "100%",
-      borderRadius: 999,
+      borderRadius:
+        999,
     },
 
     goalFooter: {
       flexDirection:
         "row",
+      alignItems:
+        "center",
       justifyContent:
         "space-between",
-      marginTop: 7,
+      marginTop: 8,
     },
 
     goalFooterText: {
       fontSize: 9,
-      fontWeight: "700",
+      fontWeight:
+        "600",
+    },
+
+    goalFooterPercent: {
+      fontSize: 9,
+      fontWeight:
+        "900",
     },
 
     /* Section */
@@ -2016,7 +2428,8 @@ const styles =
     sectionIcon: {
       width: 36,
       height: 36,
-      borderRadius: 18,
+      borderRadius:
+        18,
       borderWidth: 1,
       alignItems:
         "center",
@@ -2031,29 +2444,33 @@ const styles =
 
     sectionTitle: {
       fontSize: 16,
-      fontWeight: "900",
+      fontWeight:
+        "900",
     },
 
     sectionSubtitle: {
-      fontSize: 10,
-      lineHeight: 15,
+      fontSize: 9,
+      lineHeight: 14,
       marginTop: 2,
     },
 
     /* Forms */
 
     formCard: {
-      borderRadius: 21,
-      padding: 16,
+      borderRadius:
+        21,
+      borderWidth: 1,
+      padding: 15,
       marginBottom: 18,
     },
 
     field: {
-      width: "100%",
+      width:
+        "100%",
     },
 
     fieldSpacing: {
-      marginBottom: 15,
+      marginBottom: 14,
     },
 
     fieldLabel: {
@@ -2067,7 +2484,8 @@ const styles =
     fieldCircle: {
       width: 25,
       height: 25,
-      borderRadius: 13,
+      borderRadius:
+        13,
       alignItems:
         "center",
       justifyContent:
@@ -2078,8 +2496,10 @@ const styles =
     /* Targets */
 
     targetsCard: {
-      borderRadius: 21,
-      paddingHorizontal: 11,
+      borderRadius:
+        21,
+      borderWidth: 1,
+      paddingHorizontal: 10,
       paddingVertical: 7,
       marginBottom: 18,
     },
@@ -2095,7 +2515,8 @@ const styles =
     targetCircle: {
       width: 40,
       height: 40,
-      borderRadius: 20,
+      borderRadius:
+        20,
       borderWidth: 1,
       alignItems:
         "center",
@@ -2106,32 +2527,35 @@ const styles =
     targetInfo: {
       flex: 1,
       marginLeft: 10,
-      paddingRight: 8,
+      paddingRight: 7,
     },
 
     targetTitle: {
-      fontSize: 13,
-      fontWeight: "800",
+      fontSize: 12,
+      fontWeight:
+        "800",
     },
 
     targetDescription: {
-      fontSize: 9,
-      lineHeight: 15,
+      fontSize: 8,
+      lineHeight: 14,
       marginTop: 2,
     },
 
-    targetInputWrapper: {
-      width: 105,
+    targetInputWrap: {
+      width: 104,
       position:
         "relative",
     },
 
     targetInput: {
       minHeight: 44,
-      paddingRight: 33,
-      textAlign: "right",
+      paddingRight: 32,
+      textAlign:
+        "right",
       fontSize: 13,
-      fontWeight: "800",
+      fontWeight:
+        "800",
     },
 
     targetSuffix: {
@@ -2140,52 +2564,57 @@ const styles =
       right: 9,
       top: 14,
       fontSize: 8,
-      fontWeight: "700",
+      fontWeight:
+        "700",
     },
 
     /* Save */
 
     saveButton: {
-      minHeight: 64,
-      borderRadius: 999,
+      minHeight: 65,
+      borderRadius:
+        999,
       borderWidth: 1,
-      paddingHorizontal: 10,
+      paddingHorizontal: 9,
       flexDirection:
         "row",
       alignItems:
         "center",
-      marginBottom: 25,
+      marginBottom: 24,
     },
 
-    saveCircle: {
-      width: 42,
-      height: 42,
-      borderRadius: 21,
+    saveIcon: {
+      width: 44,
+      height: 44,
+      borderRadius:
+        22,
       alignItems:
         "center",
       justifyContent:
         "center",
     },
 
-    saveText: {
+    saveCopy: {
       flex: 1,
-      marginLeft: 11,
+      marginLeft: 10,
     },
 
     saveTitle: {
       fontSize: 14,
-      fontWeight: "900",
+      fontWeight:
+        "900",
     },
 
     saveSubtitle: {
-      fontSize: 10,
+      fontSize: 9,
       marginTop: 2,
     },
 
     saveArrow: {
       width: 34,
       height: 34,
-      borderRadius: 17,
+      borderRadius:
+        17,
       alignItems:
         "center",
       justifyContent:
@@ -2195,8 +2624,10 @@ const styles =
     /* Engine */
 
     engineCard: {
-      borderRadius: 22,
-      padding: 16,
+      borderRadius:
+        22,
+      borderWidth: 1,
+      padding: 15,
       marginBottom: 18,
     },
 
@@ -2207,23 +2638,31 @@ const styles =
         "center",
       justifyContent:
         "space-between",
-      marginBottom: 15,
+      marginBottom: 14,
+    },
+
+    engineCopy: {
+      flex: 1,
+      paddingRight: 8,
     },
 
     engineTitle: {
-      fontSize: 16,
-      fontWeight: "900",
+      fontSize: 15,
+      fontWeight:
+        "900",
     },
 
     engineSubtitle: {
-      fontSize: 10,
+      fontSize: 9,
+      lineHeight: 14,
       marginTop: 2,
     },
 
-    engineCircle: {
+    engineIcon: {
       width: 40,
       height: 40,
-      borderRadius: 20,
+      borderRadius:
+        20,
       borderWidth: 1,
       alignItems:
         "center",
@@ -2239,16 +2678,18 @@ const styles =
 
     energyStat: {
       flex: 1,
-      minHeight: 108,
-      borderRadius: 18,
+      minHeight: 104,
+      borderRadius:
+        18,
       borderWidth: 1,
-      padding: 12,
+      padding: 11,
     },
 
-    energyCircle: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
+    energyIcon: {
+      width: 31,
+      height: 31,
+      borderRadius:
+        16,
       alignItems:
         "center",
       justifyContent:
@@ -2256,55 +2697,61 @@ const styles =
     },
 
     energyLabel: {
-      fontSize: 9,
-      marginTop: 8,
+      fontSize: 8,
+      marginTop: 7,
     },
 
     energyValue: {
       fontSize: 21,
-      fontWeight: "900",
+      fontWeight:
+        "900",
       marginTop: 2,
     },
 
     energyUnit: {
-      fontSize: 8,
+      fontSize: 7,
       marginTop: 1,
     },
 
-    calorieTarget: {
+    targetCaloriePill: {
       minHeight: 58,
-      borderRadius: 18,
+      borderRadius:
+        999,
       borderWidth: 1,
       flexDirection:
         "row",
       alignItems:
         "center",
-      paddingHorizontal: 10,
+      paddingHorizontal: 8,
       marginTop: 9,
     },
 
-    calorieTargetCircle: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
+    targetCalorieIcon: {
+      width: 39,
+      height: 39,
+      borderRadius:
+        20,
+      backgroundColor:
+        `${ACCENT}12`,
       alignItems:
         "center",
       justifyContent:
         "center",
     },
 
-    calorieTargetText: {
+    targetCalorieText: {
       flex: 1,
       marginLeft: 9,
     },
 
-    calorieTargetLabel: {
-      fontSize: 9,
+    targetCalorieLabel: {
+      fontSize: 8,
     },
 
-    calorieTargetValue: {
-      fontSize: 17,
-      fontWeight: "900",
+    targetCalorieValue: {
+      fontSize: 16,
+      fontWeight:
+        "900",
       marginTop: 1,
     },
 
@@ -2312,38 +2759,60 @@ const styles =
 
     settingsButton: {
       minHeight: 62,
-      borderRadius: 999,
+      borderRadius:
+        999,
       borderWidth: 1,
-      paddingHorizontal: 11,
+      paddingHorizontal: 9,
       flexDirection:
         "row",
       alignItems:
         "center",
     },
 
-    settingsCircle: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+    settingsIcon: {
+      width: 42,
+      height: 42,
+      borderRadius:
+        21,
       alignItems:
         "center",
       justifyContent:
         "center",
     },
 
-    settingsText: {
+    settingsCopy: {
       flex: 1,
       marginLeft: 10,
     },
 
     settingsTitle: {
-      fontSize: 13,
-      fontWeight: "900",
+      fontSize: 12,
+      fontWeight:
+        "900",
     },
 
     settingsSubtitle: {
-      fontSize: 9,
+      fontSize: 8,
+      lineHeight: 14,
       marginTop: 2,
+    },
+
+    settingsArrow: {
+      width: 31,
+      height: 31,
+      borderRadius:
+        16,
+      backgroundColor:
+        "rgba(128,128,128,0.08)",
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
+
+    divider: {
+      height: 1,
+      marginVertical: 13,
     },
 
     bottomSpace: {

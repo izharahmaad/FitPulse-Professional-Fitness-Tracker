@@ -2,7 +2,6 @@ import React, {
   useCallback,
   useState,
 } from "react";
-
 import {
   Image,
   Pressable,
@@ -11,32 +10,21 @@ import {
   Text,
   View,
 } from "react-native";
-
 import {
   router,
   useFocusEffect,
 } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import Svg, { Circle } from "react-native-svg";
 
 import {
-  Ionicons,
-} from "@expo/vector-icons";
-
-import Svg, {
-  Circle,
-} from "react-native-svg";
-
-import {
-  Card,
   Screen,
   Subtitle,
   Title,
   useAppColors,
 } from "@/components/ui";
 
-import {
-  useFitness,
-} from "@/hooks/useFitness";
-
+import { useFitness } from "@/hooks/useFitness";
 import {
   formatKm,
   formatNumber,
@@ -46,18 +34,10 @@ import {
   getProfileImage,
 } from "@/services/profileImage";
 
-/* -------------------------------------------------------
-   Dashboard accent
-------------------------------------------------------- */
-
 const STEP_GREEN = "#B7FF1A";
 
 type IconName =
   keyof typeof Ionicons.glyphMap;
-
-/* -------------------------------------------------------
-   HOME SCREEN
-------------------------------------------------------- */
 
 export default function HomeScreen() {
   const c = useAppColors();
@@ -71,9 +51,9 @@ export default function HomeScreen() {
     latestWeightKg,
   } = useFitness();
 
-  /* -----------------------------------------------------
-     Profile photo
-  ----------------------------------------------------- */
+  /* =========================================================
+     PROFILE IMAGE
+  ========================================================= */
 
   const [profileImage, setProfileImage] =
     useState<string | null>(null);
@@ -90,27 +70,15 @@ export default function HomeScreen() {
       }
     }, []);
 
-  /*
-   * Reload the image whenever Home
-   * becomes active again.
-   *
-   * This means:
-   *
-   * Profile → change photo
-   * ↓
-   * return Home
-   * ↓
-   * new photo appears
-   */
   useFocusEffect(
     useCallback(() => {
       void loadProfileImage();
     }, [loadProfileImage])
   );
 
-  /* -----------------------------------------------------
-     Real nutrition calculations
-  ----------------------------------------------------- */
+  /* =========================================================
+     REAL CALORIE DATA
+  ========================================================= */
 
   const caloriesConsumed =
     todayFoods.reduce(
@@ -121,11 +89,10 @@ export default function HomeScreen() {
       0
     );
 
-  const calorieGoal =
-    Math.max(
-      1,
-      state.profile.calorieGoal
-    );
+  const calorieGoal = Math.max(
+    1,
+    state.profile.calorieGoal
+  );
 
   const caloriesRemaining =
     Math.max(
@@ -144,15 +111,14 @@ export default function HomeScreen() {
       )
     );
 
-  /* -----------------------------------------------------
-     Real step calculations
-  ----------------------------------------------------- */
+  /* =========================================================
+     REAL STEP DATA
+  ========================================================= */
 
-  const stepGoal =
-    Math.max(
-      1,
-      state.profile.stepGoal
-    );
+  const stepGoal = Math.max(
+    1,
+    state.profile.stepGoal
+  );
 
   const stepsRemaining =
     Math.max(
@@ -176,15 +142,14 @@ export default function HomeScreen() {
       )
     );
 
-  /* -----------------------------------------------------
-     Real water calculations
-  ----------------------------------------------------- */
+  /* =========================================================
+     REAL WATER DATA
+  ========================================================= */
 
-  const waterGoal =
-    Math.max(
-      1,
-      state.profile.waterGoalMl
-    );
+  const waterGoal = Math.max(
+    1,
+    state.profile.waterGoalMl
+  );
 
   const waterPercent =
     Math.min(
@@ -196,9 +161,9 @@ export default function HomeScreen() {
       )
     );
 
-  /* -----------------------------------------------------
-     Profile initials
-  ----------------------------------------------------- */
+  /* =========================================================
+     PROFILE INITIALS
+  ========================================================= */
 
   const profileInitials = (
     state.profile.name ||
@@ -214,9 +179,23 @@ export default function HomeScreen() {
     )
     .join("");
 
-  /* -----------------------------------------------------
-     Loading state
-  ----------------------------------------------------- */
+  /* =========================================================
+     DASHBOARD STATES
+  ========================================================= */
+
+  const stepsComplete =
+    today.steps >= stepGoal;
+
+  const waterComplete =
+    todayWaterMl >= waterGoal;
+
+  const caloriesComplete =
+    caloriesConsumed >=
+    calorieGoal;
+
+  /* =========================================================
+     LOADING
+  ========================================================= */
 
   if (!hydrated) {
     return (
@@ -265,9 +244,9 @@ export default function HomeScreen() {
           styles.content
         }
       >
-        {/* =================================================
+        {/* ===================================================
             HEADER
-        ================================================= */}
+        =================================================== */}
 
         <View style={styles.header}>
           <View style={styles.headerText}>
@@ -294,10 +273,6 @@ export default function HomeScreen() {
               for today.
             </Text>
           </View>
-
-          {/* =================================================
-              PROFILE DP
-          ================================================= */}
 
           <Pressable
             onPress={() =>
@@ -351,8 +326,6 @@ export default function HomeScreen() {
               </Text>
             )}
 
-            {/* Small active dot */}
-
             <View
               style={[
                 styles.profileStatusDot,
@@ -365,9 +338,9 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* =================================================
-            MAIN STEP CARD
-        ================================================= */}
+        {/* ===================================================
+            STEP HERO
+        =================================================== */}
 
         <View
           style={[
@@ -380,11 +353,7 @@ export default function HomeScreen() {
             },
           ]}
         >
-          <View
-            style={
-              styles.stepHeader
-            }
-          >
+          <View style={styles.stepHeader}>
             <View>
               <Text
                 style={[
@@ -447,9 +416,7 @@ export default function HomeScreen() {
           </View>
 
           <View
-            style={
-              styles.ringContainer
-            }
+            style={styles.ringContainer}
           >
             <StepProgressRing
               progress={
@@ -460,6 +427,9 @@ export default function HomeScreen() {
               }
               goal={
                 stepGoal
+              }
+              trackColor={
+                c.surfaceAlt
               }
             />
           </View>
@@ -541,9 +511,9 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* =================================================
-            ACTIVITY STATS
-        ================================================= */}
+        {/* ===================================================
+            ACTIVITY
+        =================================================== */}
 
         <View
           style={
@@ -562,17 +532,39 @@ export default function HomeScreen() {
             Activity
           </Text>
 
-          <Text
+          <View
             style={[
-              styles.sectionCaption,
+              styles.sectionPill,
               {
-                color:
-                  c.muted,
+                backgroundColor:
+                  c.surfaceAlt,
+                borderColor:
+                  c.border,
               },
             ]}
           >
-            Today
-          </Text>
+            <View
+              style={[
+                styles.sectionPillDot,
+                {
+                  backgroundColor:
+                    STEP_GREEN,
+                },
+              ]}
+            />
+
+            <Text
+              style={[
+                styles.sectionPillText,
+                {
+                  color:
+                    c.muted,
+                },
+              ]}
+            >
+              Today
+            </Text>
+          </View>
         </View>
 
         <View
@@ -626,9 +618,9 @@ export default function HomeScreen() {
           />
         </View>
 
-        {/* =================================================
-            NUTRITION SNAPSHOT
-        ================================================= */}
+        {/* ===================================================
+            NUTRITION
+        =================================================== */}
 
         <View
           style={
@@ -653,6 +645,9 @@ export default function HomeScreen() {
                 "/calories"
               )
             }
+            style={
+              styles.viewButton
+            }
           >
             <Text
               style={[
@@ -665,6 +660,14 @@ export default function HomeScreen() {
             >
               View
             </Text>
+
+            <Ionicons
+              name="chevron-forward"
+              size={13}
+              color={
+                STEP_GREEN
+              }
+            />
           </Pressable>
         </View>
 
@@ -739,9 +742,12 @@ export default function HomeScreen() {
                   },
                 ]}
               >
-                {caloriesConsumed}{" "}
+                {Math.round(
+                  caloriesConsumed
+                ).toLocaleString()}{" "}
                 of{" "}
-                {calorieGoal} kcal
+                {calorieGoal.toLocaleString()}{" "}
+                kcal
               </Text>
             </View>
 
@@ -759,9 +765,9 @@ export default function HomeScreen() {
                   },
                 ]}
               >
-                {
+                {Math.round(
                   caloriesRemaining
-                }
+                ).toLocaleString()}
               </Text>
 
               <Text
@@ -832,9 +838,9 @@ export default function HomeScreen() {
           </View>
         </Pressable>
 
-        {/* =================================================
+        {/* ===================================================
             QUICK ACTIONS
-        ================================================= */}
+        =================================================== */}
 
         <View
           style={
@@ -862,7 +868,7 @@ export default function HomeScreen() {
               },
             ]}
           >
-            Log something
+            Shortcuts
           </Text>
         </View>
 
@@ -922,9 +928,9 @@ export default function HomeScreen() {
           />
         </View>
 
-        {/* =================================================
-            TODAY'S STATUS
-        ================================================= */}
+        {/* ===================================================
+            TODAY STATUS
+        =================================================== */}
 
         <View
           style={
@@ -940,7 +946,19 @@ export default function HomeScreen() {
               },
             ]}
           >
-            Today
+            Today's progress
+          </Text>
+
+          <Text
+            style={[
+              styles.sectionCaption,
+              {
+                color:
+                  c.muted,
+              },
+            ]}
+          >
+            Live
           </Text>
         </View>
 
@@ -966,6 +984,9 @@ export default function HomeScreen() {
             progress={
               stepProgress
             }
+            completed={
+              stepsComplete
+            }
             c={c}
           />
 
@@ -988,25 +1009,90 @@ export default function HomeScreen() {
               todayWaterMl /
                 waterGoal
             )}
+            completed={
+              waterComplete
+            }
             c={c}
           />
 
           <StatusRow
             icon="flame-outline"
             title="Calories"
-            value={`${caloriesConsumed} / ${calorieGoal} kcal`}
+            value={`${Math.round(
+              caloriesConsumed
+            )} / ${calorieGoal} kcal`}
             progress={Math.min(
               1,
               caloriesConsumed /
                 calorieGoal
             )}
+            completed={
+              caloriesComplete
+            }
             c={c}
           />
         </View>
 
-        {/* =================================================
-            BOTTOM SPACE
-        ================================================= */}
+        {/* ===================================================
+            SMALL DAILY NOTE
+        =================================================== */}
+
+        <View
+          style={[
+            styles.dailyNote,
+            {
+              backgroundColor:
+                c.surface,
+              borderColor:
+                c.border,
+            },
+          ]}
+        >
+          <View
+            style={
+              styles.dailyNoteIcon
+            }
+          >
+            <Ionicons
+              name="sparkles-outline"
+              size={16}
+              color={
+                STEP_GREEN
+              }
+            />
+          </View>
+
+          <View
+            style={
+              styles.dailyNoteText
+            }
+          >
+            <Text
+              style={[
+                styles.dailyNoteTitle,
+                {
+                  color:
+                    c.text,
+                },
+              ]}
+            >
+              Keep the momentum
+            </Text>
+
+            <Text
+              style={[
+                styles.dailyNoteSubtitle,
+                {
+                  color:
+                    c.muted,
+                },
+              ]}
+            >
+              Small consistent actions make the biggest
+              difference.
+            </Text>
+          </View>
+        </View>
 
         <View
           style={
@@ -1019,17 +1105,19 @@ export default function HomeScreen() {
 }
 
 /* =========================================================
-   STEP PROGRESS RING
+   STEP RING
 ========================================================= */
 
 function StepProgressRing({
   progress,
   steps,
   goal,
+  trackColor,
 }: {
   progress: number;
   steps: number;
   goal: number;
+  trackColor: string;
 }) {
   const size = 220;
   const strokeWidth = 13;
@@ -1044,9 +1132,19 @@ function StepProgressRing({
     Math.PI *
     radius;
 
+  const safeProgress =
+    Math.max(
+      0,
+      Math.min(
+        1,
+        progress
+      )
+    );
+
   const strokeDashoffset =
     circumference *
-    (1 - progress);
+    (1 -
+      safeProgress);
 
   return (
     <View
@@ -1065,8 +1163,6 @@ function StepProgressRing({
         height={size}
         viewBox={`0 0 ${size} ${size}`}
       >
-        {/* Background */}
-
         <Circle
           cx={
             size / 2
@@ -1075,14 +1171,14 @@ function StepProgressRing({
             size / 2
           }
           r={radius}
-          stroke="#26301C"
+          stroke={
+            trackColor
+          }
           strokeWidth={
             strokeWidth
           }
           fill="none"
         />
-
-        {/* Progress */}
 
         <Circle
           cx={
@@ -1202,7 +1298,9 @@ function DashboardMetric({
         <Ionicons
           name={icon}
           size={19}
-          color={color}
+          color={
+            color
+          }
         />
       </View>
 
@@ -1274,7 +1372,9 @@ function QuickAction({
 }) {
   return (
     <Pressable
-      onPress={onPress}
+      onPress={
+        onPress
+      }
       style={({ pressed }) => [
         styles.quickAction,
         {
@@ -1310,7 +1410,7 @@ function QuickAction({
       >
         <Ionicons
           name={icon}
-          size={21}
+          size={20}
           color={
             STEP_GREEN
           }
@@ -1347,13 +1447,19 @@ function QuickAction({
         </Text>
       </View>
 
-      <Ionicons
-        name="chevron-forward"
-        size={17}
-        color={
-          c.muted
+      <View
+        style={
+          styles.quickArrow
         }
-      />
+      >
+        <Ionicons
+          name="chevron-forward"
+          size={14}
+          color={
+            c.muted
+          }
+        />
+      </View>
     </Pressable>
   );
 }
@@ -1367,16 +1473,27 @@ function StatusRow({
   title,
   value,
   progress,
+  completed,
   c,
 }: {
   icon: IconName;
   title: string;
   value: string;
   progress: number;
+  completed: boolean;
   c: ReturnType<
     typeof useAppColors
   >;
 }) {
+  const safeProgress =
+    Math.max(
+      0,
+      Math.min(
+        1,
+        progress
+      )
+    );
+
   return (
     <View
       style={
@@ -1388,15 +1505,23 @@ function StatusRow({
           styles.statusIcon,
           {
             backgroundColor:
-              `${STEP_GREEN}15`,
+              completed
+                ? `${STEP_GREEN}20`
+                : `${STEP_GREEN}12`,
             borderColor:
-              `${STEP_GREEN}28`,
+              completed
+                ? `${STEP_GREEN}38`
+                : `${STEP_GREEN}24`,
           },
         ]}
       >
         <Ionicons
-          name={icon}
-          size={18}
+          name={
+            completed
+              ? "checkmark"
+              : icon
+          }
+          size={17}
           color={
             STEP_GREEN
           }
@@ -1453,14 +1578,7 @@ function StatusRow({
               {
                 backgroundColor:
                   STEP_GREEN,
-                width: `${Math.min(
-                  100,
-                  Math.max(
-                    0,
-                    progress *
-                      100
-                  )
-                )}%`,
+                width: `${safeProgress * 100}%`,
               },
             ]}
           />
@@ -1479,7 +1597,7 @@ const styles =
     content: {
       paddingHorizontal: 16,
       paddingTop: 16,
-      paddingBottom: 130,
+      paddingBottom: 140,
     },
 
     /* Loading */
@@ -1569,7 +1687,7 @@ const styles =
         "#111812",
     },
 
-    /* Step Card */
+    /* Hero */
 
     stepCard: {
       borderRadius: 28,
@@ -1724,13 +1842,46 @@ const styles =
     },
 
     sectionCaption: {
-      fontSize: 12,
-      fontWeight: "600",
+      fontSize: 10,
+      fontWeight: "700",
+    },
+
+    sectionPill: {
+      minHeight: 27,
+      borderRadius: 999,
+      borderWidth: 1,
+      paddingHorizontal: 8,
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      gap: 5,
+    },
+
+    sectionPillDot: {
+      width: 5,
+      height: 5,
+      borderRadius: 3,
+    },
+
+    sectionPillText: {
+      fontSize: 8,
+      fontWeight: "700",
+    },
+
+    viewButton: {
+      minHeight: 28,
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      gap: 2,
+      paddingLeft: 5,
     },
 
     viewText: {
-      fontSize: 13,
-      fontWeight: "800",
+      fontSize: 11,
+      fontWeight: "900",
     },
 
     /* Activity */
@@ -1743,7 +1894,7 @@ const styles =
 
     metricCard: {
       flex: 1,
-      minHeight: 130,
+      minHeight: 124,
       borderRadius: 21,
       borderWidth: 1,
       padding: 14,
@@ -1761,9 +1912,9 @@ const styles =
     },
 
     metricTitle: {
-      fontSize: 12,
+      fontSize: 11,
       fontWeight: "600",
-      marginTop: 12,
+      marginTop: 11,
     },
 
     metricValueRow: {
@@ -1776,12 +1927,12 @@ const styles =
     },
 
     metricValue: {
-      fontSize: 22,
+      fontSize: 21,
       fontWeight: "900",
     },
 
     metricSuffix: {
-      fontSize: 10,
+      fontSize: 9,
       fontWeight: "700",
     },
 
@@ -1822,7 +1973,7 @@ const styles =
     },
 
     nutritionSubtitle: {
-      fontSize: 11,
+      fontSize: 10,
       marginTop: 3,
     },
 
@@ -1837,7 +1988,7 @@ const styles =
     },
 
     calorieRemaining: {
-      fontSize: 10,
+      fontSize: 9,
       marginTop: 1,
     },
 
@@ -1865,36 +2016,36 @@ const styles =
     },
 
     progressLabel: {
-      fontSize: 10,
+      fontSize: 9,
       fontWeight: "600",
     },
 
     progressPercent: {
-      fontSize: 10,
+      fontSize: 9,
       fontWeight: "900",
     },
 
     /* Quick Actions */
 
     actionsGrid: {
-      gap: 9,
+      gap: 8,
     },
 
     quickAction: {
-      minHeight: 68,
-      borderRadius: 19,
+      minHeight: 64,
+      borderRadius: 999,
       borderWidth: 1,
       flexDirection:
         "row",
       alignItems:
         "center",
-      paddingHorizontal: 12,
+      paddingHorizontal: 8,
     },
 
     quickIcon: {
-      width: 42,
-      height: 42,
-      borderRadius: 21,
+      width: 46,
+      height: 46,
+      borderRadius: 23,
       alignItems:
         "center",
       justifyContent:
@@ -1904,25 +2055,38 @@ const styles =
 
     quickText: {
       flex: 1,
-      marginLeft: 11,
+      marginLeft: 10,
     },
 
     quickTitle: {
-      fontSize: 14,
+      fontSize: 12,
       fontWeight: "800",
     },
 
     quickSubtitle: {
-      fontSize: 11,
-      marginTop: 3,
+      fontSize: 9,
+      marginTop: 2,
+    },
+
+    quickArrow: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor:
+        "rgba(128,128,128,0.08)",
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+      marginRight: 5,
     },
 
     /* Status */
 
     statusCard: {
-      borderRadius: 22,
+      borderRadius: 23,
       borderWidth: 1,
-      padding: 15,
+      padding: 14,
     },
 
     statusRow: {
@@ -1960,12 +2124,12 @@ const styles =
     },
 
     statusTitle: {
-      fontSize: 12,
+      fontSize: 11,
       fontWeight: "800",
     },
 
     statusValue: {
-      fontSize: 10,
+      fontSize: 9,
       fontWeight: "600",
     },
 
@@ -1979,6 +2143,49 @@ const styles =
     statusFill: {
       height: "100%",
       borderRadius: 999,
+    },
+
+    /* Daily note */
+
+    dailyNote: {
+      minHeight: 60,
+      borderRadius: 999,
+      borderWidth: 1,
+      paddingHorizontal: 8,
+      paddingVertical: 7,
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      marginTop: 18,
+    },
+
+    dailyNoteIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor:
+        `${STEP_GREEN}12`,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
+
+    dailyNoteText: {
+      flex: 1,
+      marginLeft: 9,
+    },
+
+    dailyNoteTitle: {
+      fontSize: 10,
+      fontWeight: "900",
+    },
+
+    dailyNoteSubtitle: {
+      fontSize: 8,
+      lineHeight: 14,
+      marginTop: 2,
     },
 
     bottomSpace: {
