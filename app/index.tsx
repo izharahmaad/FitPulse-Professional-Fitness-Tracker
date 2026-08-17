@@ -19,68 +19,32 @@ const ACCENT = "#B7FF1A";
 export default function Index() {
   const c = useAppColors();
 
-  const logoScale = useRef(
-    new Animated.Value(0.7)
-  ).current;
-
-  const logoOpacity = useRef(
-    new Animated.Value(0)
-  ).current;
-
-  const contentOpacity = useRef(
-    new Animated.Value(0)
-  ).current;
-
   const progress = useRef(
     new Animated.Value(0)
   ).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.spring(logoScale, {
+    const animation = Animated.timing(
+      progress,
+      {
         toValue: 1,
-        friction: 6,
-        tension: 70,
-        useNativeDriver: true,
-      }),
-
-      Animated.timing(logoOpacity, {
-        toValue: 1,
-        duration: 450,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
-      }),
-
-      Animated.timing(contentOpacity, {
-        toValue: 1,
-        duration: 500,
-        delay: 180,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
-      }),
-
-      Animated.timing(progress, {
-        toValue: 1,
-        duration: 1650,
-        delay: 150,
-        easing: Easing.out(Easing.ease),
+        duration: 3000,
+        easing: Easing.linear,
         useNativeDriver: false,
-      }),
-    ]).start();
+      }
+    );
+
+    animation.start();
 
     const timer = setTimeout(() => {
       router.replace("/(tabs)");
-    }, 2000);
+    }, 3000);
 
     return () => {
+      animation.stop();
       clearTimeout(timer);
     };
-  }, [
-    logoScale,
-    logoOpacity,
-    contentOpacity,
-    progress,
-  ]);
+  }, [progress]);
 
   return (
     <Screen>
@@ -88,37 +52,18 @@ export default function Index() {
         style={[
           styles.container,
           {
-            backgroundColor: c.background,
+            backgroundColor:
+              c.background,
           },
         ]}
       >
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.glow,
-            {
-              backgroundColor: `${ACCENT}10`,
-              opacity: logoOpacity,
-              transform: [
-                {
-                  scale: logoScale,
-                },
-              ],
-            },
-          ]}
-        />
-
-        <Animated.View
+        {/* Logo */}
+        <View
           style={[
             styles.logo,
             {
-              backgroundColor: ACCENT,
-              opacity: logoOpacity,
-              transform: [
-                {
-                  scale: logoScale,
-                },
-              ],
+              backgroundColor:
+                ACCENT,
             },
           ]}
         >
@@ -127,16 +72,10 @@ export default function Index() {
             size={40}
             color="#0A0F0C"
           />
-        </Animated.View>
+        </View>
 
-        <Animated.View
-          style={[
-            styles.content,
-            {
-              opacity: contentOpacity,
-            },
-          ]}
-        >
+        {/* Brand */}
+        <View style={styles.brandBlock}>
           <Text
             style={[
               styles.title,
@@ -158,13 +97,15 @@ export default function Index() {
           >
             Welcome to your fitness journey
           </Text>
-        </Animated.View>
+        </View>
 
+        {/* Loading */}
         <View
           style={[
             styles.progressTrack,
             {
-              backgroundColor: c.surfaceAlt,
+              backgroundColor:
+                c.surfaceAlt,
             },
           ]}
         >
@@ -172,31 +113,33 @@ export default function Index() {
             style={[
               styles.progressFill,
               {
-                backgroundColor: ACCENT,
-                width: progress.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [
-                    "0%",
-                    "100%",
-                  ],
-                }),
+                backgroundColor:
+                  ACCENT,
+                width:
+                  progress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [
+                      "0%",
+                      "100%",
+                    ],
+                  }),
               },
             ]}
           />
         </View>
 
-        <Animated.Text
+        <Text
           style={[
             styles.loadingText,
             {
               color: c.muted,
-              opacity: contentOpacity,
             },
           ]}
         >
           Opening FitPulse…
-        </Animated.Text>
+        </Text>
 
+        {/* Footer */}
         <Text
           style={[
             styles.footer,
@@ -219,13 +162,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  glow: {
-    position: "absolute",
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-  },
-
   logo: {
     width: 88,
     height: 88,
@@ -234,7 +170,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  content: {
+  brandBlock: {
     alignItems: "center",
     marginTop: 20,
   },
