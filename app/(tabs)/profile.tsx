@@ -343,9 +343,6 @@ export default function ProfileScreen() {
         }
         keyboardShouldPersistTaps="handled"
       >
-        {/* ===================================================
-            HEADER
-        =================================================== */}
 
         <View style={styles.header}>
           <View
