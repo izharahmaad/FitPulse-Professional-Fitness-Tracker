@@ -28,10 +28,6 @@ export default function CaloriesScreen() {
   const { state, todayFoods, today } =
     useFitness();
 
-  /* =========================================================
-     REAL DATA
-  ========================================================= */
-
   const calorieGoal = Math.max(
     1,
     state.profile.calorieGoal
