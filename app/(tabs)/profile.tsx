@@ -389,10 +389,6 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* ===================================================
-            PROFILE HERO
-        =================================================== */}
-
         <Card
           style={[
             styles.profileHero,
