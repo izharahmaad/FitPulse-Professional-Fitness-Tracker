@@ -639,10 +639,6 @@ export default function ProfileScreen() {
           </Text>
         </Card>
 
-        {/* ===================================================
-            GOAL PROGRESS
-        =================================================== */}
-
         <SectionHeader
           icon="flag-outline"
           title="Goal progress"
