@@ -77,7 +77,7 @@ npx expo run:android
 4. Keep FitPulse active while validating sensor readings.
 5. Set notification preferences if desired.
 
-## Architecture
+
 
 ```text
 app/
