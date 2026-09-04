@@ -122,8 +122,8 @@ For a true Android background/history step-data requirement, integrate a health-
 
 ```text
                     ┌─────────────────────────────┐
-                    │        FitPulse Mobile        │
-                    │ React Native + Expo Router    │
+                    │        FitPulse Mobile      │
+                    │ React Native + Expo Router  │
                     └──────────────┬──────────────┘
                                    │
               ┌────────────────────┼────────────────────┐
@@ -138,22 +138,22 @@ For a true Android background/history step-data requirement, integrate a health-
              └────────────┬───────┴────────────┬───────┘
                           ▼                    ▼
                 ┌────────────────────────────────────┐
-                │         FitnessProvider             │
-                │  goals • totals • logs • analytics  │
+                │         FitnessProvider            │
+                │  goals • totals • logs • analytics │
                 └──────────────────┬─────────────────┘
                                    │
                                    ▼
                 ┌────────────────────────────────────┐
-                │          Service Layer              │
-                │ storage • pedometer • calories      │
-                │ notifications • formatting           │
+                │          Service Layer             │
+                │ storage • pedometer • calories     │
+                │ notifications • formatting         │
                 └──────────────────┬─────────────────┘
                                    │
                                    ▼
                 ┌────────────────────────────────────┐
-                │          AsyncStorage               │
-                │ Profile • goals • daily totals      │
-                │ Food • water • weight • preferences │
+                │          AsyncStorage              │
+                │ Profile • goals • daily totals     │
+                │ Food • water • weight • preferences│
                 └────────────────────────────────────┘
 ```
 
