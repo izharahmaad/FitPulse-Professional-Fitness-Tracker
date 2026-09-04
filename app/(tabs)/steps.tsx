@@ -44,10 +44,6 @@ export default function StepsScreen() {
 
   const [message, setMessage] = useState("");
 
-  /* =========================================================
-     REAL 7-DAY STEP DATA
-  ========================================================= */
-
   const days = useMemo(
     () => lastNDays(7),
     []
