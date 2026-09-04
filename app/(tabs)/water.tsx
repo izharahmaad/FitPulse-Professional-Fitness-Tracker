@@ -35,10 +35,6 @@ export default function WaterScreen() {
 
   const [custom, setCustom] = useState("");
 
-  /* =========================================================
-     REAL HYDRATION DATA
-  ========================================================= */
-
   const goal = Math.max(
     1,
     state.profile.waterGoalMl
