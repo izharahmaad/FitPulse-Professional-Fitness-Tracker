@@ -2,7 +2,7 @@
 
 FitPulse is a local-first React Native fitness app built with Expo SDK 57, TypeScript and Expo Router. It prioritizes real device pedometer data, calorie tracking, water, weight and useful analytics.
 
-## Important step-tracking reality
+## Important step-tracking
 
 The implementation deliberately does **not** fake steps.
 
