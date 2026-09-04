@@ -193,7 +193,7 @@ Before publishing:
 ## Sources used for the technical decision
 
 Expo Pedometer documentation:
-https://docs.expo.dev/versions/v57.0.0/sdk/pedometer/
+https://docs
 
 Expo SDK reference:
 https://docs.expo.dev/versions/latest/
