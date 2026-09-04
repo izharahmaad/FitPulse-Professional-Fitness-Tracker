@@ -49,7 +49,7 @@ Local notifications are implemented. Remote push notifications are not needed fo
 Requirements:
 
 - Node.js compatible with Expo SDK 57 (Expo currently documents Node.js 22.13.x as the SDK 57 minimum).
-- Android Studio for local Android builds, or EAS Build.
+- Android Studio for local Android builds
 - A physical Android/iOS device for meaningful pedometer testing.
 
 ```bash
