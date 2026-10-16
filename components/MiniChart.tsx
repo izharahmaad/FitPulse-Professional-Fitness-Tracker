@@ -25,9 +25,6 @@ export function MiniChart({
 }: MiniChartProps) {
   const c = useAppColors();
 
-  /* ---------------------------------------------------------
-     Safety
-  --------------------------------------------------------- */
 
   if (!values || values.length === 0) {
     return (
