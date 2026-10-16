@@ -196,10 +196,6 @@ export function MiniChart({
         </View>
       </View>
 
-      {/* ---------------------------------------------------
-          Date labels
-      --------------------------------------------------- */}
-
       {labels && labels.length > 0 ? (
         <View style={styles.labels}>
           {labels.map(
